@@ -1,5 +1,5 @@
 (ns node-webkit-build.core
-  (:require [clj-http.client :as client]
+  (:require [clj-http.client :as http]
             [clj-semver.core :as semver]))
 
 (defn version-list [url]
@@ -7,7 +7,7 @@
    numbers, then returns a sorted list of the semantic version numbers found.
 
    It uses clj-semver to sort the version numbers."
-  (->> (client/get url)
+  (->> (http/get url)
        :body
        (re-seq #"v(\d+\.\d+\.\d+)")
        (map second)
