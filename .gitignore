@@ -1,9 +1,11 @@
 /target
 /classes
 /checkouts
+/cassettes
 pom.xml
 pom.xml.asc
 *.jar
 *.class
 /.lein-*
 /.nrepl-port
+\#*\#
