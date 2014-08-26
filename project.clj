@@ -8,5 +8,4 @@
   :dependencies [[clj-http "1.0.0"]
                  [grimradical/clj-semver "0.2.0"]]
 
-  :profiles {:dev {:dependencies [[org.clojure/data.codec "0.1.0"]
-                                  [fs "1.3.3"]]}})
+  :profiles {:dev {:dependencies [[com.gfredericks/vcr-clj "0.4.0"]]}})
