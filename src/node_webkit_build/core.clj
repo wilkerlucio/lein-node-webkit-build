@@ -13,3 +13,10 @@
        (map second)
        (set)
        (sort semver/cmp)))
+
+(defn version-names [v]
+  {:version v
+   :platforms {:win (str "v" v "/node-webkit-v" v "-win-ia32.zip")
+               :osx (str "v" v "/node-webkit-v" v "-osx-ia32.zip")
+               :linux32 (str "v" v "/node-webkit-v" v "-linux-ia32.tar.gz")
+               :linux64 (str "v" v "/node-webkit-v" v "-linux-x64.tar.gz")}})
