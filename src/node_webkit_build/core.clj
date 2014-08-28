@@ -34,8 +34,8 @@
     (conj http/default-middleware http/wrap-lower-case-headers)
     (let [request (http/get url {:as :stream :decompress-body false})
           length (Integer. (get-in request [:headers "content-length"]))
-          buffer-size 1024]
-      (progress/init length)
+          buffer-size (* 1024 10)]
+      (progress/init (str "Downloading " url) length)
       (with-open [input (->> request
                              :body
                              (CountingInputStream.))
