@@ -6,6 +6,8 @@
   :eval-in-leiningen true
 
   :dependencies [[clj-http "1.0.0"]
-                 [grimradical/clj-semver "0.2.0"]]
+                 [grimradical/clj-semver "0.2.0"]
+                 [org.apache.directory.studio/org.apache.commons.io "2.4"]
+                 [intervox/clj-progress "0.1.1"]]
 
   :profiles {:dev {:dependencies [[com.gfredericks/vcr-clj "0.4.0"]]}})
