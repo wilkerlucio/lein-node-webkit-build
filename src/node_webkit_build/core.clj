@@ -48,3 +48,15 @@
                 (tick-n size)
                 (recur))))))
       (progress/done))))
+
+(defn map-values [f m]
+  (into {} (map (fn [[k v]] [k (f v)]) m)))
+
+(defn versions-with-data [url]
+  (let [full-path (partial str url)
+        full-platform-paths (fn [entry] (update-in entry
+                                                   [:platforms]
+                                                   (partial map-values full-path)))]
+    (->> (version-list url)
+         (map version-names)
+         (map full-platform-paths))))
