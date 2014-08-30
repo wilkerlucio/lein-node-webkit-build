@@ -20,3 +20,8 @@
                         :linux32 "v0.9.1/node-webkit-v0.9.1-linux-ia32.tar.gz"
                         :linux64 "v0.9.1/node-webkit-v0.9.1-linux-x64.tar.gz"}}
            (version-names "0.9.1")))))
+
+(deftest test-map-values
+  (testing "maps the values and keep the keys"
+    (is (= {:a 2 :b 4 :c 6}
+           (map-values (partial * 2) {:a 1 :b 2 :c 3})))))

@@ -24,28 +24,54 @@
                :linux32 (str "v" v "/node-webkit-v" v "-linux-ia32.tar.gz")
                :linux64 (str "v" v "/node-webkit-v" v "-linux-x64.tar.gz")}})
 
-(defn tick-n [n]
+(defn tick-by [n]
   (swap! progress/*progress-state* update-in [:done] (partial + n))
   (if-let [f (get progress/*progress-handler* :tick)]
     (f @progress/*progress-state*)))
 
+(defn tick-to [x]
+  (swap! progress/*progress-state* assoc-in [:done] x)
+  (if-let [f (get progress/*progress-handler* :tick)]
+    (f @progress/*progress-state*)))
+
+(defn wrap-downloaded-bytes-counter
+  "Middleware that provides an CountingInputStream wrapping the stream output"
+  [client]
+  (fn [req]
+    (let [resp (client req)
+          counter (CountingInputStream. (:body resp))]
+      (merge resp {:body counter
+                   :downloaded-bytes-counter counter}))))
+
+(defn conj-at [v idx val]
+  (-> (subvec v 0 idx)
+      (conj val)
+      (concat (subvec v idx))))
+
+(defn conj-after [v needle val]
+  (let [index (.indexOf v needle)]
+    (if (neg? index)
+      v
+      (conj-at v (inc index) val))))
+
 (defn download-with-progress [url target]
   (http/with-middleware
-    (conj http/default-middleware http/wrap-lower-case-headers)
-    (let [request (http/get url {:as :stream :decompress-body false})
-          length (Integer. (get-in request [:headers "content-length"]))
+    (-> http/default-middleware
+        (conj-after http/wrap-redirects wrap-downloaded-bytes-counter)
+        (conj http/wrap-lower-case-headers))
+    (let [request (http/get url {:as :stream})
+          length (Integer. (get-in request [:headers "content-length"] 0))
           buffer-size (* 1024 10)]
       (progress/init (str "Downloading " url) length)
-      (with-open [input (->> request
-                             :body
-                             (CountingInputStream.))
+      (with-open [input (:body request)
                   output (output-stream target)]
-        (let [buffer (make-array Byte/TYPE buffer-size)]
+        (let [buffer (make-array Byte/TYPE buffer-size)
+              counter (:downloaded-bytes-counter request)]
           (loop []
             (let [size (.read input buffer)]
               (when (pos? size)
                 (.write output buffer 0 size)
-                (tick-n size)
+                (tick-to (.getByteCount counter))
                 (recur))))))
       (progress/done))))
 

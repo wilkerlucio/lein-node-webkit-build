@@ -7,6 +7,10 @@
   [project & args]
   (let [latest (last (versions-with-data "http://dl.node-webkit.org/"))
         url (get-in latest [:platforms :osx])
-        cache-path "node-webkit-cache"]
-    (fs/mkdirs cache-path)
-    (download-with-progress url (str cache-path "/" (fs/base-name url)))))
+        cache-dir "node-webkit-cache"
+        output-path (str cache-dir "/" (fs/base-name url))]
+    (if (fs/exists? output-path)
+      (println "File already exists" output-path)
+      (do
+        (fs/mkdirs cache-dir)
+        (download-with-progress url output-path)))))
