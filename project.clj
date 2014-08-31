@@ -9,7 +9,6 @@
                  [clj-http "1.0.0" :exclusions [com.fasterxml.jackson.core/jackson-core]]
                  [grimradical/clj-semver "0.2.0" :exclusions [org.clojure/clojure]]
                  [commons-io "2.4"]
-                 [intervox/clj-progress "0.1.1"]
                  [me.raynes/fs "1.4.4"]]
 
   :profiles {:dev {:dependencies [[com.gfredericks/vcr-clj "0.4.0"]]}})

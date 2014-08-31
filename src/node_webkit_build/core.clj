@@ -1,7 +1,6 @@
 (ns node-webkit-build.core
   (:require [clj-http.client :as http]
             [clj-semver.core :as semver]
-            [clj-progress.core :as progress]
             [clojure.java.io :refer [output-stream]])
   (:import (org.apache.commons.io.input CountingInputStream)))
 
@@ -24,16 +23,6 @@
                :linux32 (str "v" v "/node-webkit-v" v "-linux-ia32.tar.gz")
                :linux64 (str "v" v "/node-webkit-v" v "-linux-x64.tar.gz")}})
 
-(defn tick-by [n]
-  (swap! progress/*progress-state* update-in [:done] (partial + n))
-  (if-let [f (get progress/*progress-handler* :tick)]
-    (f @progress/*progress-state*)))
-
-(defn tick-to [x]
-  (swap! progress/*progress-state* assoc-in [:done] x)
-  (if-let [f (get progress/*progress-handler* :tick)]
-    (f @progress/*progress-state*)))
-
 (defn wrap-downloaded-bytes-counter
   "Middleware that provides an CountingInputStream wrapping the stream output"
   [client]
@@ -43,26 +32,45 @@
       (merge resp {:body counter
                    :downloaded-bytes-counter counter}))))
 
-(defn conj-at [v idx val]
+(defn insert-at [v idx val]
   (-> (subvec v 0 idx)
       (conj val)
       (concat (subvec v idx))))
 
-(defn conj-after [v needle val]
+(defn insert-after [v needle val]
   (let [index (.indexOf v needle)]
     (if (neg? index)
       v
-      (conj-at v (inc index) val))))
+      (insert-at v (inc index) val))))
+
+(defn print-progress-bar
+  "Render a simple progress bar given the progress and total. If the total is zero
+   the progress will run as indeterminated."
+  ([progress total] (print-progress-bar progress total {}))
+  ([progress total {:keys [bar-width]
+                    :or   {bar-width 50}}]
+    (if (pos? total)
+      (let [pct (/ progress total)
+            render-bar (fn []
+                         (let [bars (Math/floor (* pct bar-width))
+                               pad (- bar-width bars)]
+                           (str (clojure.string/join (repeat bars "="))
+                                (clojure.string/join (repeat pad " ")))))]
+        (print (str "[" (render-bar) "] "
+                    (int (* pct 100)) "% "
+                    progress "/" total)))
+      (let [render-bar (fn [] (clojure.string/join (repeat bar-width "-")))]
+        (print (str "[" (render-bar) "] "
+                    progress "/?"))))))
 
 (defn download-with-progress [url target]
   (http/with-middleware
     (-> http/default-middleware
-        (conj-after http/wrap-redirects wrap-downloaded-bytes-counter)
+        (insert-after http/wrap-redirects wrap-downloaded-bytes-counter)
         (conj http/wrap-lower-case-headers))
     (let [request (http/get url {:as :stream})
           length (Integer. (get-in request [:headers "content-length"] 0))
           buffer-size (* 1024 10)]
-      (progress/init (str "Downloading " url) length)
       (with-open [input (:body request)
                   output (output-stream target)]
         (let [buffer (make-array Byte/TYPE buffer-size)
@@ -71,9 +79,10 @@
             (let [size (.read input buffer)]
               (when (pos? size)
                 (.write output buffer 0 size)
-                (tick-to (.getByteCount counter))
+                (print "\r")
+                (print-progress-bar (.getByteCount counter) length)
                 (recur))))))
-      (progress/done))))
+      (println))))
 
 (defn map-values [f m]
   (into {} (map (fn [[k v]] [k (f v)]) m)))
