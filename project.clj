@@ -6,6 +6,7 @@
   :eval-in-leiningen true
 
   :dependencies [[org.clojure/clojure "1.6.0"]
+                 [org.clojure/data.json "0.2.5"]
                  [clj-http "1.0.0" :exclusions [com.fasterxml.jackson.core/jackson-core]]
                  [grimradical/clj-semver "0.2.0" :exclusions [org.clojure/clojure]]
                  [commons-io "2.4"]

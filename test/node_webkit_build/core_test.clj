@@ -25,3 +25,34 @@
   (testing "maps the values and keep the keys"
     (is (= {:a 2 :b 4 :c 6}
            (map-values (partial * 2) {:a 1 :b 2 :c 3})))))
+
+(deftest test-wrap-stack
+  (testing "returns the seed if stack is blank"
+    (is (= 0 ((wrap-stack []) 0))))
+  (testing "works with a single function"
+    (is (= 1 ((wrap-stack [#(fn [req] (inc (% req)))]) 0))))
+  (testing "it calls the stack in the correct order"
+    (let [mkfn (fn [n] (fn [client]
+                         (fn [req]
+                           (conj (client (conj req (* n -1))) n))))]
+      (is (= [0 -1 -2 -3 3 2 1]
+             ((wrap-stack [(mkfn 1) (mkfn 2) (mkfn 3)]) [0]))))))
+
+(defn include-properties? [expected m]
+  (every? (fn [[k v]] (= v (k m))) expected))
+
+(deftest test-wrap-read-fs-package
+  (testing "reading a valid package.json file"
+    (is (include-properties?
+          {:package {:name "sample-app"
+                     :version "0.0.1"}}
+          ((wrap-read-fs-package identity) {:root "test/fixtures/sample-app"})))))
+
+(deftest test-build-app
+  (testing "full integration"
+    (build-app {:root "/Users/wilkerlucio/Development/sm2/smgui/public"
+                :output "releases/nw-build"
+                :platforms #{:osx :win :linux32 :linux64}
+                :osx {:icon "icon-path"}
+                :disable-developer-toolbar true
+                :use-lein-project-version true})))

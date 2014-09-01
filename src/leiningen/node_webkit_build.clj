@@ -9,7 +9,7 @@
 
 (defn path-join [& parts] (str/join (File/separator) parts))
 
-(defn archive-path []
+(defn get-nw-package []
   (let [latest (last (versions-with-data "http://dl.node-webkit.org/"))
         url (get-in latest [:platforms :osx])
         cache-dir "node-webkit-cache"
@@ -38,7 +38,7 @@
   [project & args]
   (let [release-dir (path-join "releases" "macox")]
     (clear-directory release-dir)
-    (let [nw-archive (archive-path)]
+    (let [nw-archive (get-nw-package)]
       (unzip nw-archive release-dir)
       (create-app-archive "/Users/wilkerlucio/Development/sm2/smgui/public"
                           (path-join release-dir "node-webkit-v0.10.2-osx-ia32/node-webkit.app/Contents/Resources" "app.nw"))

@@ -1,7 +1,8 @@
 (ns node-webkit-build.core
   (:require [clj-http.client :as http]
             [clj-semver.core :as semver]
-            [clojure.java.io :refer [output-stream]])
+            [clojure.data.json :as json]
+            [clojure.java.io :as io :refer [output-stream]])
   (:import (org.apache.commons.io.input CountingInputStream)
            (java.io File)))
 
@@ -96,3 +97,17 @@
     (->> (version-list url)
          (map version-names)
          (map full-platform-paths))))
+
+(defn wrap-stack [stack]
+  (reduce (fn [request middleware] (middleware request))
+          identity
+          (reverse stack)))
+
+(defn wrap-read-fs-package [client]
+  (fn [{:keys [root] :as req}]
+    (let [file (io/file root "package.json")
+          data (json/read (io/reader file) :key-fn keyword)]
+      (client (assoc req :package data)))))
+
+(defn build-app [options]
+  )
