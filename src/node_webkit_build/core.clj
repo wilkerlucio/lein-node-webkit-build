@@ -1,10 +1,12 @@
 (ns node-webkit-build.core
+  (:import (org.apache.commons.io.input CountingInputStream)
+           (java.io File FileOutputStream FileInputStream)
+           (org.apache.commons.io FileUtils IOUtils))
   (:require [clj-http.client :as http]
             [clj-semver.core :as semver]
             [clojure.data.json :as json]
-            [clojure.java.io :as io :refer [output-stream]])
-  (:import (org.apache.commons.io.input CountingInputStream)
-           (java.io File)))
+            [clojure.java.io :as io :refer [output-stream]]
+            [slingshot.slingshot :refer [throw+]]))
 
 (defn version-list [url]
   "Reads an HTTP URL formated as Apache Index looking for semantic version
@@ -105,9 +107,25 @@
 
 (defn wrap-read-fs-package [client]
   (fn [{:keys [root] :as req}]
-    (let [file (io/file root "package.json")
-          data (json/read (io/reader file) :key-fn keyword)]
-      (client (assoc req :package data)))))
+    (with-open [reader (io/reader (io/file root "package.json"))]
+      (let [data (json/read reader :key-fn keyword)]
+        (client (assoc req :package data))))))
+
+(defn wrap-output-files [client]
+  (fn [req]
+    (let [{:keys [files output root] :as res} (client req)]
+      (FileUtils/deleteDirectory (io/file output))
+      (doseq [[name content] files]
+        (let [input-stream (cond
+                             (= :read content) (FileInputStream. (io/file root name))
+                             (string? content) (IOUtils/toInputStream content)
+                             :else (throw+ {:type ::unsupported-input}))
+              file (io/file output name)]
+          (io/make-parents file)
+          (with-open [out (FileOutputStream. file)
+                      in input-stream]
+            (IOUtils/copy in out))))
+      res)))
 
 (defn build-app [options]
   )

@@ -1,7 +1,8 @@
 (ns node-webkit-build.core-test
   (:require [clojure.test :refer :all]
             [vcr-clj.clj-http :refer [with-cassette]]
-            [node-webkit-build.core :refer :all]))
+            [node-webkit-build.core :refer :all]
+            [slingshot.test]))
 
 (def server-url "http://dl.node-webkit.org/")
 
@@ -43,10 +44,27 @@
 
 (deftest test-wrap-read-fs-package
   (testing "reading a valid package.json file"
-    (is (include-properties?
-          {:package {:name "sample-app"
-                     :version "0.0.1"}}
-          ((wrap-read-fs-package identity) {:root "test/fixtures/sample-app"})))))
+    (let [params ((wrap-read-fs-package identity) {:root "test/fixtures/sample-app"})]
+      (is (include-properties?
+            {:package {:name    "sample-app"
+                       :version "0.0.1"}}
+            params)))))
+
+(deftest test-wrap-output-files
+  (testing "outputs the string contents"
+    ((wrap-output-files identity) {:files [["sample.txt" "sample content"]]
+                                   :output "test/fixtures/sample-app-out"})
+    (is (= "sample content"
+           (slurp "test/fixtures/sample-app-out/sample.txt"))))
+  (testing "reads from the root"
+    ((wrap-output-files identity) {:files [["package.json" :read]]
+                                   :root "test/fixtures/sample-app"
+                                   :output "test/fixtures/sample-app-out"})
+    (is (= (slurp "test/fixtures/sample-app/package.json")
+           (slurp "test/fixtures/sample-app-out/package.json"))))
+  (testing "throw error if unsupported input is given"
+    (is (thrown+? [:type ::node-webkit-build.core/unsupported-input] ((wrap-output-files identity) {:files [["sample.txt" :invalid]]
+                                                                                                    :output "test/fixtures/sample-app-out"})))))
 
 (deftest test-build-app
   (testing "full integration"
