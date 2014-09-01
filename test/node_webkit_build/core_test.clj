@@ -27,44 +27,38 @@
     (is (= {:a 2 :b 4 :c 6}
            (map-values (partial * 2) {:a 1 :b 2 :c 3})))))
 
-(deftest test-wrap-stack
-  (testing "returns the seed if stack is blank"
-    (is (= 0 ((wrap-stack []) 0))))
-  (testing "works with a single function"
-    (is (= 1 ((wrap-stack [#(fn [req] (inc (% req)))]) 0))))
-  (testing "it calls the stack in the correct order"
-    (let [mkfn (fn [n] (fn [client]
-                         (fn [req]
-                           (conj (client (conj req (* n -1))) n))))]
-      (is (= [0 -1 -2 -3 3 2 1]
-             ((wrap-stack [(mkfn 1) (mkfn 2) (mkfn 3)]) [0]))))))
-
 (defn include-properties? [expected m]
   (every? (fn [[k v]] (= v (k m))) expected))
 
-(deftest test-wrap-read-fs-package
+(deftest test-read-fs-package
   (testing "reading a valid package.json file"
-    (let [params ((wrap-read-fs-package identity) {:root "test/fixtures/sample-app"})]
+    (let [params (read-fs-package {:root "test/fixtures/sample-app"})]
       (is (include-properties?
             {:package {:name    "sample-app"
                        :version "0.0.1"}}
             params)))))
 
-(deftest test-wrap-output-files
+(deftest test-output-files
   (testing "outputs the string contents"
-    ((wrap-output-files identity) {:files [["sample.txt" "sample content"]]
-                                   :output "test/fixtures/sample-app-out"})
+    (output-files {:files [["sample.txt" "sample content"]]
+                   :output "test/fixtures/sample-app-out"})
     (is (= "sample content"
            (slurp "test/fixtures/sample-app-out/sample.txt"))))
   (testing "reads from the root"
-    ((wrap-output-files identity) {:files [["package.json" :read]]
-                                   :root "test/fixtures/sample-app"
-                                   :output "test/fixtures/sample-app-out"})
+    (output-files {:files [["package.json" :read]]
+                   :root "test/fixtures/sample-app"
+                   :output "test/fixtures/sample-app-out"})
     (is (= (slurp "test/fixtures/sample-app/package.json")
            (slurp "test/fixtures/sample-app-out/package.json"))))
   (testing "throw error if unsupported input is given"
-    (is (thrown+? [:type ::node-webkit-build.core/unsupported-input] ((wrap-output-files identity) {:files [["sample.txt" :invalid]]
-                                                                                                    :output "test/fixtures/sample-app-out"})))))
+    (is (thrown+? [:type ::node-webkit-build.core/unsupported-input] (output-files {:files [["sample.txt" :invalid]]
+                                                                                    :output "test/fixtures/sample-app-out"})))))
+
+(deftest test-read-files
+  (testing "reading from a root"
+    (let [response (read-files {:root "test/fixtures/sample-app"})]
+      (is (= [["package.json" :read]]
+             (:files response))))))
 
 (deftest test-build-app
   (testing "full integration"

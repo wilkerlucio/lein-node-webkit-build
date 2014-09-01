@@ -4,6 +4,7 @@
            (org.apache.commons.io FileUtils IOUtils))
   (:require [clj-http.client :as http]
             [clj-semver.core :as semver]
+            [fs.core :as fs]
             [clojure.data.json :as json]
             [clojure.java.io :as io :refer [output-stream]]
             [slingshot.slingshot :refer [throw+]]))
@@ -100,32 +101,55 @@
          (map version-names)
          (map full-platform-paths))))
 
-(defn wrap-stack [stack]
-  (reduce (fn [request middleware] (middleware request))
-          identity
-          (reverse stack)))
+(defn read-fs-package [{:keys [root] :as req}]
+  (with-open [reader (io/reader (io/file root "package.json"))]
+    (let [data (json/read reader :key-fn keyword)]
+      (assoc req :package data))))
 
-(defn wrap-read-fs-package [client]
-  (fn [{:keys [root] :as req}]
-    (with-open [reader (io/reader (io/file root "package.json"))]
-      (let [data (json/read reader :key-fn keyword)]
-        (client (assoc req :package data))))))
+(defn output-files [{:keys [files output root] :as req}]
+  (FileUtils/deleteDirectory (io/file output))
+  (doseq [[name content] files]
+    (let [input-stream (cond
+                         (= :read content) (FileInputStream. (io/file root name))
+                         (string? content) (IOUtils/toInputStream content)
+                         :else (throw+ {:type ::unsupported-input}))
+          file (io/file output name)]
+      (io/make-parents file)
+      (with-open [out (FileOutputStream. file)
+                  in input-stream]
+        (IOUtils/copy in out))))
+  req)
 
-(defn wrap-output-files [client]
-  (fn [req]
-    (let [{:keys [files output root] :as res} (client req)]
-      (FileUtils/deleteDirectory (io/file output))
-      (doseq [[name content] files]
-        (let [input-stream (cond
-                             (= :read content) (FileInputStream. (io/file root name))
-                             (string? content) (IOUtils/toInputStream content)
-                             :else (throw+ {:type ::unsupported-input}))
-              file (io/file output name)]
-          (io/make-parents file)
-          (with-open [out (FileOutputStream. file)
-                      in input-stream]
-            (IOUtils/copy in out))))
-      res)))
+(defn path-join [& parts] (clojure.string/join (File/separator) parts))
+
+(defn path-files [path]
+  (->> (fs/walk (fn [root _ files]
+                  (map #(path-join (.toString root) %) files)) path)
+       (flatten)
+       (set)
+       (filter fs/file?)))
+
+(defn relative-path [source target]
+  (let [source (fs/absolute-path source)
+        target (fs/absolute-path target)]
+    (.substring target (-> source count inc))))
+
+(defn read-files [{:keys [root] :as req}]
+  (let [files (->> (path-files root)
+                   (map #(relative-path root %))
+                   (map #(vector % :read))
+                   (vec))]
+    (assoc req :files files)))
+
+(defn log [req & info]
+  (apply println info)
+  req)
 
 (defn build-app [options]
-  )
+  (-> options
+      (log "Reading package.json...")
+      read-fs-package
+      (log "Reading root list...")
+      read-files
+      (log "Writing output files...")
+      output-files))
