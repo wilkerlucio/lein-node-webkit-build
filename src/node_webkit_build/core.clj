@@ -141,15 +141,23 @@
                    (vec))]
     (assoc req :files files)))
 
-(defn log [req & info]
-  (apply println info)
-  req)
+(defn prepare-package-json [{:keys [package] :as req}]
+  (update-in req [:files] #(conj % ["package.json" (json/write-str package)])))
+
+(defn disable-developer-toolbar [{:keys [disable-developer-toolbar]
+                                  :or {disable-developer-toolbar true}
+                                  :as req}]
+  (if disable-developer-toolbar
+    (assoc-in req [:package :window :toolbar] false)
+    req))
 
 (defn build-app [options]
-  (-> options
-      (log "Reading package.json...")
-      read-fs-package
-      (log "Reading root list...")
-      read-files
-      (log "Writing output files...")
-      output-files))
+  (let [with-log (fn [req info f]
+                   (println info)
+                   (f req))]
+    (-> options
+        (with-log "Reading package.json" read-fs-package)
+        (with-log "Reading root list" read-files)
+        disable-developer-toolbar
+        (with-log "Building package.json" prepare-package-json)
+        (with-log "Writing output files" output-files))))
