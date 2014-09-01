@@ -7,8 +7,6 @@
   (:import (java.io File)
            (org.apache.commons.io FileUtils)))
 
-(defn path-join [& parts] (str/join (File/separator) parts))
-
 (defn archive-path []
   (let [latest (last (versions-with-data "http://dl.node-webkit.org/"))
         url (get-in latest [:platforms :osx])
@@ -23,12 +21,6 @@
   (FileUtils/deleteDirectory (io/file path))
   (fs/mkdirs path))
 
-(defn path-files [path]
-  (->> (fs/walk (fn [root _ files]
-                  (map #(path-join (.toString root) %) files)) path)
-       (flatten)
-       (filter fs/file?)))
-
 (defn relative-entry-contents [source-path]
   (let [expand-entry (fn [path]
                        [(.substring path (inc (count source-path))) (slurp path)])]
@@ -42,13 +34,16 @@
       (apply sh "zip" "-r" target-path (fs/list-dir source-path))))
   target-path)
 
-(defn unzip [zip-path target-path]
-  (sh "unzip" "-q" zip-path "-d" target-path))
-
 (defn node-webkit-build
   "Generates a Node-Webkit build."
   [project & args]
-  (let [release-dir (path-join "releases" "macox")]
+  (build-app {:root "/Users/wilkerlucio/Development/sm2/smgui/public"
+              :platforms #{:osx :win :linux32 :linux64}
+              :osx {:icon "icon-path"}
+              :nw-version :latest
+              :disable-developer-toolbar true
+              :use-lein-project-version true})
+  #_ (let [release-dir (path-join "releases" "macox")]
     (clear-directory release-dir)
     (let [nw-archive (archive-path)]
       (unzip nw-archive release-dir)

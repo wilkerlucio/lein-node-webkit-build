@@ -42,13 +42,13 @@
 (deftest test-output-files
   (testing "outputs the string contents"
     (output-files {:files [["sample.txt" "sample content"]]
-                   :output "test/fixtures/sample-app-out"})
+                   :tmp-output "test/fixtures/sample-app-out"})
     (is (= "sample content"
            (slurp "test/fixtures/sample-app-out/sample.txt"))))
   (testing "reads from the root"
     (output-files {:files [["package.json" :read]]
                    :root "test/fixtures/sample-app"
-                   :output "test/fixtures/sample-app-out"})
+                   :tmp-output "test/fixtures/sample-app-out"})
     (is (= (slurp "test/fixtures/sample-app/package.json")
            (slurp "test/fixtures/sample-app-out/package.json"))))
   (testing "throw error if unsupported input is given"

@@ -11,6 +11,7 @@
                  [grimradical/clj-semver "0.2.0" :exclusions [org.clojure/clojure]]
                  [commons-io "2.4"]
                  [me.raynes/fs "1.4.4"]
-                 [slingshot "0.10.3"]]
+                 [slingshot "0.10.3"]
+                 [com.taoensso/timbre "3.2.1"]]
 
   :profiles {:dev {:dependencies [[com.gfredericks/vcr-clj "0.4.0"]]}})
