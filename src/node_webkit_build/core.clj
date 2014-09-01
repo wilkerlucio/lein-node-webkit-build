@@ -172,10 +172,6 @@
   (unzip nw-package tmp-path)
   (assoc req :expanded-nw-package (path-join tmp-path (fs/base-name nw-package true))))
 
-(defn debug-key [req key]
-  (log :info (key req))
-  req)
-
 (defn prepare-osx-build [{:keys [output expanded-nw-package platform build-path] :as req}]
   (let [app-path (path-join expanded-nw-package "node-webkit.app")
         output-path (path-join output (name platform) (str (get-in req [:package :name]) ".app"))
@@ -193,7 +189,6 @@
     (-> (assoc req :platform :osx)
         (ensure-platform)
         (unzip-package)
-        (debug-key :expanded-nw-package)
         (prepare-osx-build)))
   req)
 
