@@ -62,7 +62,7 @@
                 (recur))))))
       (println))))
 
-(defn read-fs-package [{:keys [root] :as req}]
+(defn read-package [{:keys [root] :as req}]
   (with-open [reader (io/reader (io/file root "package.json"))]
     (let [data (json/read reader :key-fn keyword)]
       (assoc req :package data))))
@@ -164,7 +164,7 @@
                    (log :info info)
                    (f req))]
     (-> (merge default-options options)
-        (with-log "Reading package.json" read-fs-package)
+        (with-log "Reading package.json" read-package)
         (with-log "Reading root list" read-files)
         disable-developer-toolbar
         (with-log "Building package.json" prepare-package-json)

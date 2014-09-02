@@ -7,7 +7,7 @@
 
 (deftest test-read-fs-package
   (testing "reading a valid package.json file"
-    (let [params (read-fs-package {:root "test/fixtures/sample-app"})]
+    (let [params (read-package {:root "test/fixtures/sample-app"})]
       (is (= {:name   "sample-app"
               :version "0.0.1"}
              (:package params))))))
