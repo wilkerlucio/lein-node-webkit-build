@@ -12,6 +12,7 @@
 (def file #'io/file)
 (def make-parents #'io/make-parents)
 
+(def file? #'fs/file?)
 (def base-name #'fs/base-name)
 (def exists? #'fs/exists?)
 (def mkdirs #'fs/mkdirs)
@@ -19,10 +20,7 @@
 (defn path-join [& parts] (clojure.string/join (File/separator) parts))
 
 (defn path-files [path]
-  (->> (fs/walk (fn [root _ files]
-                  (map #(path-join (.toString root) %) files)) path)
-       (flatten)
-       (set)
+  (->> (file-seq (file path))
        (filter fs/file?)))
 
 (defn wrap-downloaded-bytes-counter

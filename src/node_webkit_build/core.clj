@@ -97,11 +97,11 @@
     (assoc build :app-pack package-path)))
 
 (defn copy-nw-contents [{:keys [platform expanded-nw-package] :as build} {:keys [output] :as req}]
-  (let [output-path (path-join output (name platform) (app-name req))]
-    (log :info "Copying" expanded-nw-package "into" output-path)
-    (io/mkdirs output-path)
-    (io/copy expanded-nw-package output-path)
-    (assoc build :release-path output-path)))
+  (let [output (io/file output (name platform) (app-name req))]
+    (log :info "Copying" expanded-nw-package "into" output)
+    (io/mkdirs output)
+    (FileUtils/copyDirectory (io/file expanded-nw-package) output)
+    (assoc build :release-path output)))
 
 (defn copy-app-package [{:keys [release-path app-pack] :as build} _]
   (let [pack-target (path-join release-path "app.nw")]
