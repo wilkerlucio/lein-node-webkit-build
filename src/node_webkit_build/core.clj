@@ -5,7 +5,8 @@
             [slingshot.slingshot :refer [throw+]]
             [taoensso.timbre :refer [log]]
             [node-webkit-build.versions :as versions]
-            [node-webkit-build.io :refer [path-join] :as io]))
+            [node-webkit-build.io :refer [path-join] :as io]
+            [fs.core :as fs]))
 
 (def default-options
   {:platforms #{:osx :win :linux32 :linux64}
@@ -74,21 +75,21 @@
   (let [output (get req :tmp-output (path-join tmp-path "app.nw"))]
     (FileUtils/deleteDirectory (io/file output))
     (doseq [[name content] files]
-      (let [input-stream (cond
-                           (= :read content) (FileInputStream. (io/file root name))
-                           (string? content) (IOUtils/toInputStream content)
-                           :else (throw+ {:type ::unsupported-input
-                                          :input content}))
-            file (io/file output name)]
-        (io/make-parents file)
-        (with-open [out (FileOutputStream. file)
-                    in input-stream]
-          (IOUtils/copy in out))))
+      (with-open [input-stream (cond
+                                 (= :read content) (FileInputStream. (io/file root name))
+                                 (string? content) (IOUtils/toInputStream content)
+                                 :else (throw+ {:type ::unsupported-input
+                                                :input content}))]
+        (let [file (io/file output name)]
+          (io/make-parents file)
+          (FileUtils/copyInputStreamToFile input-stream file))))
     (assoc req :build-path output)))
 
 (defn unzip-package [{:keys [nw-package] :as build} {:keys [tmp-path]}]
-  (io/unzip nw-package tmp-path)
-  (assoc build :expanded-nw-package (path-join tmp-path (io/base-name nw-package true))))
+  (let [target-path (path-join tmp-path (io/base-name nw-package true))]
+    (if-not (fs/exists? target-path)
+      (io/unzip nw-package tmp-path))
+    (assoc build :expanded-nw-package target-path)))
 
 (defn create-app-package [build {:keys [tmp-path build-path]}]
   (let [package-path (io/path-join tmp-path "app.nw.zip")]
@@ -127,10 +128,12 @@
         patch-path (path-join output-path "Contents" "Resources" "app.nw")]
     (FileUtils/deleteDirectory (io/file output-path))
     (log :info (str "Copying " app-path " into " output-path))
+    ;; using FileUtils/copyDirectory corrupts the files preventing the app from launch
+    ;; falling back for system copy until figure out the problem
     (io/copy app-path output-path)
     (log :info (str "Copying app contents into " patch-path))
     (io/make-parents patch-path)
-    (io/copy build-path patch-path)
+    (FileUtils/copyDirectory (io/file build-path) (io/file patch-path))
     build))
 
 (defmethod prepare-build :win
