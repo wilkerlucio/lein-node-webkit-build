@@ -8,7 +8,7 @@
   (-> (build-app {:root                      "/Users/wilkerlucio/Development/sm2/smgui/public"
                   :platforms                 #{:osx :win :linux32 :linux64}
                   :osx                       {:icon "icon-path"}
-                  :nw-version                :latest
+                  :nw-version                "0.10.3"
                   :disable-developer-toolbar true
                   :use-lein-project-version  true})
       (dissoc :files)
