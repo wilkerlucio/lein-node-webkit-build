@@ -14,6 +14,7 @@
 
 (def base-name #'fs/base-name)
 (def exists? #'fs/exists?)
+(def mkdirs #'fs/mkdirs)
 
 (defn path-join [& parts] (clojure.string/join (File/separator) parts))
 
@@ -56,6 +57,13 @@
 
 (defn copy [input output]
   (sh "cp" "-r" input output))
+
+(defn zip [source-path target-path]
+  (let [source-path (fs/absolute-path source-path)
+        target-path (fs/absolute-path target-path)]
+    (with-sh-dir source-path
+      (apply sh "zip" "-r" target-path (fs/list-dir source-path))))
+  target-path)
 
 (defn unzip [zip-path target-path]
   (sh "unzip" "-q" zip-path "-d" target-path))

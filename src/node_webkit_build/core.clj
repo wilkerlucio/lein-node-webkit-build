@@ -60,14 +60,14 @@
     (assoc-in req [:package :window :toolbar] false)
     req))
 
-(defn ensure-platform [{:keys [tmp-path platform nw-version] :as req}]
+(defn ensure-platform [{:keys [platform] :as build} {:keys [tmp-path nw-version]}]
   (let [url (versions/url-for platform nw-version)
         output-path (path-join tmp-path "node-webkit-cache" (io/base-name url))]
     (when-not (io/exists? output-path)
       (log :info (str "Downloading " url))
       (io/make-parents output-path)
       (io/download-with-progress url output-path))
-    (assoc req :nw-package output-path)))
+    (assoc build :nw-package output-path)))
 
 (defn output-files [{:keys [files root tmp-path] :as req}]
   (log :info "Writing package files")
@@ -77,7 +77,8 @@
       (let [input-stream (cond
                            (= :read content) (FileInputStream. (io/file root name))
                            (string? content) (IOUtils/toInputStream content)
-                           :else (throw+ {:type ::unsupported-input}))
+                           :else (throw+ {:type ::unsupported-input
+                                          :input content}))
             file (io/file output name)]
         (io/make-parents file)
         (with-open [out (FileOutputStream. file)
@@ -85,11 +86,40 @@
           (IOUtils/copy in out))))
     (assoc req :build-path output)))
 
-(defn unzip-package [{:keys [nw-package tmp-path] :as req}]
+(defn unzip-package [{:keys [nw-package] :as build} {:keys [tmp-path]}]
   (io/unzip nw-package tmp-path)
-  (assoc req :expanded-nw-package (path-join tmp-path (io/base-name nw-package true))))
+  (assoc build :expanded-nw-package (path-join tmp-path (io/base-name nw-package true))))
 
-(defn prepare-osx-build [{:keys [output expanded-nw-package platform build-path] :as req}]
+(defn create-app-package [build {:keys [tmp-path build-path]}]
+  (let [package-path (io/path-join tmp-path "app.nw.zip")]
+    (if-not (io/exists? package-path)
+      (io/zip build-path package-path))
+    (assoc build :app-pack package-path)))
+
+(defn copy-nw-contents [{:keys [platform expanded-nw-package] :as build} {:keys [output] :as req}]
+  (let [output-path (path-join output (name platform) (app-name req))]
+    (log :info "Copying" expanded-nw-package "into" output-path)
+    (io/mkdirs output-path)
+    (io/copy expanded-nw-package output-path)
+    (assoc build :release-path output-path)))
+
+(defn copy-app-package [{:keys [release-path app-pack] :as build} _]
+  (let [pack-target (path-join release-path "app.nw")]
+    (log :info "Copying" app-pack "into" pack-target)
+    (io/copy app-pack pack-target))
+  build)
+
+(defn prepare-simple-build [build req]
+  (log :info "Preparing simple build for" build)
+  (-> build
+      (create-app-package req)
+      (copy-nw-contents req)
+      (copy-app-package req)))
+
+(defmulti prepare-build (fn [build _] (:platform build)))
+
+(defmethod prepare-build :osx
+  [{:keys [expanded-nw-package platform] :as build} {:keys [output build-path] :as req}]
   (let [app-path (path-join expanded-nw-package "node-webkit.app")
         output-path (path-join output (name platform) (str (app-name req) ".app"))
         patch-path (path-join output-path "Contents" "Resources" "app.nw")]
@@ -99,17 +129,21 @@
     (log :info (str "Copying app contents into " patch-path))
     (io/make-parents patch-path)
     (io/copy build-path patch-path)
-    req))
+    build))
 
-(defn build-osx [req]
-  (if ((get req :platforms #{}) :osx)
-    (do
-      (log :info "Building OSX")
-      (-> (assoc req :platform :osx)
-          (ensure-platform)
-          (unzip-package)
-          (prepare-osx-build)))
-    req))
+(defmethod prepare-build :win
+  [build req] (prepare-simple-build build req))
+
+(defn build-platform [req platform]
+  (log :info "Building" (name platform))
+  (let [build (-> {:platform platform}
+                  (ensure-platform req)
+                  (unzip-package req)
+                  (prepare-build req))]
+    (assoc-in req [:builds platform] build)))
+
+(defn build-platforms [{:keys [platforms] :as req}]
+  (reduce build-platform req platforms))
 
 (defn build-app [options]
   (-> (merge default-options options)
@@ -121,4 +155,4 @@
       disable-developer-toolbar
       prepare-package-json
       output-files
-      build-osx))
+      build-platforms))
