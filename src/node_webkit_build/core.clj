@@ -2,8 +2,7 @@
   (:import (org.apache.commons.io.input CountingInputStream)
            (java.io File FileOutputStream FileInputStream)
            (org.apache.commons.io FileUtils IOUtils))
-  (:require [clj-http.client :as http]
-            [clojure.data.json :as json]
+  (:require [clojure.data.json :as json]
             [slingshot.slingshot :refer [throw+]]
             [taoensso.timbre :refer [log]]
             [node-webkit-build.versions :as versions]
