@@ -10,7 +10,17 @@
             [taoensso.timbre :refer [log]]
             [clojure.java.shell :refer [sh with-sh-dir]]
             [node-webkit-build.util :refer [insert-after]]
-            [node-webkit-build.versions :refer [versions-with-data]]))
+            [node-webkit-build.versions :as versions]))
+
+(defn path-join [& parts] (clojure.string/join (File/separator) parts))
+
+(def default-options
+  {:platforms #{:osx :win :linux32 :linux64}
+   :nw-version :latest
+   :output "releases"
+   :disable-developer-toolbar true
+   :use-lein-project-version true
+   :tmp-path (path-join "tmp" "nw-build")})
 
 (defn wrap-downloaded-bytes-counter
   "Middleware that provides an CountingInputStream wrapping the stream output"
@@ -62,12 +72,26 @@
                 (recur))))))
       (println))))
 
+(defn read-versions [req]
+  (assoc req :nw-available-versions (versions/versions-list)))
+
 (defn read-package [{:keys [root] :as req}]
   (with-open [reader (io/reader (io/file root "package.json"))]
     (let [data (json/read reader :key-fn keyword)]
       (assoc req :package data))))
 
-(defn path-join [& parts] (clojure.string/join (File/separator) parts))
+(defn normalize-version [{:keys [nw-version versions] :as req}]
+  (if (= nw-version :latest)
+    (assoc req :nw-version (last versions))
+    req))
+
+(defn verify-version [{:keys [nw-version versions] :as req}]
+  (if ((set versions) nw-version)
+    req
+    (throw+ {:type ::invalid-version
+             :message (str "Version " nw-version " is not available.")
+             :version nw-version
+             :available-versions versions})))
 
 (defn path-files [path]
   (->> (fs/walk (fn [root _ files]
@@ -98,9 +122,8 @@
     (assoc-in req [:package :window :toolbar] false)
     req))
 
-(defn ensure-platform [{:keys [tmp-path platform] :as req}]
-  (let [latest (last (versions-with-data "http://dl.node-webkit.org/"))
-        url (get-in latest [:platforms platform])
+(defn ensure-platform [{:keys [tmp-path platform nw-version] :as req}]
+  (let [url (versions/url-for platform nw-version)
         output-path (path-join tmp-path "node-webkit-cache" (fs/base-name url))]
     (when-not (fs/exists? output-path)
       (log :info (str "Downloading " url))
@@ -151,19 +174,14 @@
         (prepare-osx-build)))
   req)
 
-(def default-options
-  {:platforms #{:osx :win :linux32 :linux64}
-   :nw-version :latest
-   :output "releases"
-   :disable-developer-toolbar true
-   :use-lein-project-version true
-   :tmp-path (path-join "tmp" "nw-build")})
-
 (defn build-app [options]
   (let [with-log (fn [req info f]
                    (log :info info)
                    (f req))]
     (-> (merge default-options options)
+        (with-log "Reading node-webkit available versions" read-versions)
+        normalize-version
+        verify-version
         (with-log "Reading package.json" read-package)
         (with-log "Reading root list" read-files)
         disable-developer-toolbar
