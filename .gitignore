@@ -1,6 +1,10 @@
 /target
 /classes
 /checkouts
+test/fixtures/sample-app-out
+test/fixtures/sample-zip
+test/fixtures/sample-tar-gz
+test/fixtures/sample.tar
 pom.xml
 pom.xml.asc
 *.jar

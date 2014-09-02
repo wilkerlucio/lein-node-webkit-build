@@ -1,8 +1,10 @@
 (ns node-webkit-build.io
   (:import (java.io File FileOutputStream FileInputStream)
-           (org.apache.commons.io.input CountingInputStream))
+           (org.apache.commons.io.input CountingInputStream)
+           (org.apache.commons.io FilenameUtils))
   (:require [clj-http.client :as http]
             [fs.core :as fs]
+            [fs.compression :as compression]
             [clojure.java.io :as io]
             [clojure.java.shell :refer [sh with-sh-dir]]
             [node-webkit-build.util :refer [insert-after print-progress-bar]]))
@@ -24,6 +26,12 @@
 (defn path-files [path]
   (->> (file-seq (file path))
        (filter fs/file?)))
+
+(defn archive-base-name [path]
+  "Like base name, but aware of multi extensions like .tar.gz"
+  (cond
+    (re-find #"\.tar\.gz$" path) (base-name path ".tar.gz")
+    :else (base-name path true)))
 
 (defn wrap-downloaded-bytes-counter
   "Middleware that provides an CountingInputStream wrapping the stream output"
@@ -67,6 +75,17 @@
 
 (defn unzip [zip-path target-path]
   (sh "unzip" "-q" zip-path "-d" target-path))
+
+(defn untar-gz [source-path target-path]
+  (let [tar-name (FilenameUtils/removeExtension source-path)]
+    (compression/gunzip source-path tar-name)
+    (compression/untar tar-name target-path)))
+
+(defn extract-file [source-path target-path]
+  (let [decompress-fn (cond
+                        (re-find #"\.zip$" source-path) unzip
+                        (re-find #"\.tar\.gz$" source-path) untar-gz)]
+    (decompress-fn source-path target-path)))
 
 (defn relative-path [source target]
   (let [source (fs/absolute-path source)

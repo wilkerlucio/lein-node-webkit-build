@@ -1,6 +1,6 @@
 (ns node-webkit-build.core
   (:import (java.io FileOutputStream FileInputStream)
-           (org.apache.commons.io FileUtils IOUtils))
+           (org.apache.commons.io FileUtils IOUtils FilenameUtils))
   (:require [clojure.data.json :as json]
             [slingshot.slingshot :refer [throw+]]
             [taoensso.timbre :refer [log]]
@@ -85,10 +85,10 @@
           (FileUtils/copyInputStreamToFile input-stream file))))
     (assoc req :build-path output)))
 
-(defn unzip-package [{:keys [nw-package] :as build} {:keys [tmp-path]}]
-  (let [target-path (path-join tmp-path (io/base-name nw-package true))]
+(defn extract-package [{:keys [nw-package] :as build} {:keys [tmp-path]}]
+  (let [target-path (path-join tmp-path (io/archive-base-name nw-package))]
     (if-not (fs/exists? target-path)
-      (io/unzip nw-package tmp-path))
+      (io/extract-file nw-package tmp-path))
     (assoc build :expanded-nw-package target-path)))
 
 (defn create-app-package [build {:keys [tmp-path build-path]}]
@@ -112,13 +112,6 @@
       (IOUtils/copy in out)))
   build)
 
-(defn prepare-simple-build [build req]
-  (log :info "Preparing simple build for" build)
-  (-> build
-      (create-app-package req)
-      (copy-nw-contents req)
-      (copy-app-package req)))
-
 (defmulti prepare-build (fn [build _] (:platform build)))
 
 (defmethod prepare-build :osx
@@ -137,13 +130,28 @@
     build))
 
 (defmethod prepare-build :win
-  [build req] (prepare-simple-build build req))
+  [build req]
+  (log :info "Preparing simple build for" build)
+  (-> build
+      (create-app-package req)
+      (copy-nw-contents req)
+      (copy-app-package req)))
+
+(defmethod prepare-build :linux32
+  [build _]
+  (log :info "Preparing Linux32 build")
+  build)
+
+(defmethod prepare-build :linux64
+  [build _]
+  (log :info "Preparing Linux64 build")
+  build)
 
 (defn build-platform [req platform]
   (log :info "Building" (name platform))
   (let [build (-> {:platform platform}
                   (ensure-platform req)
-                  (unzip-package req)
+                  (extract-package req)
                   (prepare-build req))]
     (assoc-in req [:builds platform] build)))
 

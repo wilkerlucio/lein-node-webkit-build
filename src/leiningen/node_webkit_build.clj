@@ -7,7 +7,7 @@
   [project & args]
   (-> (build-app {:root                      "/Users/wilkerlucio/Development/sm2/smgui/public"
                   :name                      "Subtitle Master"
-                  :platforms                 #{:osx :win}
+                  :platforms                 #{:osx :win :linux32 :linux64}
                   :osx                       {:icon "icon-path"}
                   :nw-version                "0.10.3"
                   :disable-developer-toolbar true
