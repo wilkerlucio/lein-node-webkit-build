@@ -104,9 +104,9 @@
     (assoc build :release-path output)))
 
 (defn copy-app-package [{:keys [release-path app-pack] :as build} _]
-  (let [pack-target (path-join release-path "app.nw")]
+  (let [pack-target (io/file release-path "package.nw")]
     (log :info "Copying" app-pack "into" pack-target)
-    (io/copy app-pack pack-target))
+    (FileUtils/copyFile (io/file app-pack) pack-target))
   build)
 
 (defn prepare-simple-build [build req]
