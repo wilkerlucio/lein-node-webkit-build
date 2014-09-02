@@ -73,9 +73,11 @@
       (println))))
 
 (defn read-versions [req]
+  (log :info "Reading node-webkit available versions")
   (assoc req :nw-available-versions (versions/versions-list)))
 
 (defn read-package [{:keys [root] :as req}]
+  (log :info "Reading package.json")
   (with-open [reader (io/reader (io/file root "package.json"))]
     (let [data (json/read reader :key-fn keyword)]
       (assoc req :package data))))
@@ -106,6 +108,7 @@
     (.substring target (-> source count inc))))
 
 (defn read-files [{:keys [root] :as req}]
+  (log :info "Reading files list")
   (let [files (->> (path-files root)
                    (map #(relative-path root %))
                    (map #(vector % :read))
@@ -132,6 +135,7 @@
     (assoc req :nw-package output-path)))
 
 (defn output-files [{:keys [files root tmp-path] :as req}]
+  (log :info "Writing package files")
   (let [output (get req :tmp-output (path-join tmp-path "app.nw"))]
     (FileUtils/deleteDirectory (io/file output))
     (doseq [[name content] files]
@@ -175,16 +179,13 @@
   req)
 
 (defn build-app [options]
-  (let [with-log (fn [req info f]
-                   (log :info info)
-                   (f req))]
-    (-> (merge default-options options)
-        (with-log "Reading node-webkit available versions" read-versions)
-        normalize-version
-        verify-version
-        (with-log "Reading package.json" read-package)
-        (with-log "Reading root list" read-files)
-        disable-developer-toolbar
-        (with-log "Building package.json" prepare-package-json)
-        (with-log "Writing output files" output-files)
-        build-osx)))
+  (-> (merge default-options options)
+      read-versions
+      normalize-version
+      verify-version
+      read-package
+      read-files
+      disable-developer-toolbar
+      prepare-package-json
+      output-files
+      build-osx))
