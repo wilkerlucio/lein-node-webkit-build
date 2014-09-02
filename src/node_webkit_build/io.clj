@@ -11,6 +11,8 @@
 (def reader #'io/reader)
 (def file #'io/file)
 (def make-parents #'io/make-parents)
+(def input-stream #'io/input-stream)
+(def output-stream #'io/output-stream)
 
 (def file? #'fs/file?)
 (def base-name #'fs/base-name)
