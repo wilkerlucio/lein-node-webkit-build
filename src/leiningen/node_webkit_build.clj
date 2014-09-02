@@ -1,31 +1,7 @@
 (ns leiningen.node-webkit-build
   (:require [node-webkit-build.core :refer :all]
             [fs.core :as fs]
-            [clojure.string :as str]
-            [clojure.java.io :as io]
-            [clojure.java.shell :refer [sh with-sh-dir]])
-  (:import (java.io File)
-           (org.apache.commons.io FileUtils)))
-
-(defn archive-path []
-  (let [latest (last (versions-with-data "http://dl.node-webkit.org/"))
-        url (get-in latest [:platforms :osx])
-        cache-dir "node-webkit-cache"
-        output-path (path-join cache-dir (fs/base-name url))]
-    (when-not (fs/exists? output-path)
-      (io/make-parents output-path)
-      (download-with-progress url output-path))
-    output-path))
-
-(defn clear-directory [path]
-  (FileUtils/deleteDirectory (io/file path))
-  (fs/mkdirs path))
-
-(defn relative-entry-contents [source-path]
-  (let [expand-entry (fn [path]
-                       [(.substring path (inc (count source-path))) (slurp path)])]
-    (->> (path-files source-path)
-         (map expand-entry))))
+            [clojure.java.shell :refer [sh with-sh-dir]]))
 
 (defn create-app-archive [source-path target-path]
   (let [source-path (fs/absolute-path source-path)
@@ -42,11 +18,4 @@
               :osx {:icon "icon-path"}
               :nw-version :latest
               :disable-developer-toolbar true
-              :use-lein-project-version true})
-  #_ (let [release-dir (path-join "releases" "macox")]
-    (clear-directory release-dir)
-    (let [nw-archive (archive-path)]
-      (unzip nw-archive release-dir)
-      (create-app-archive "/Users/wilkerlucio/Development/sm2/smgui/public"
-                          (path-join release-dir "node-webkit-v0.10.2-osx-ia32/node-webkit.app/Contents/Resources" "app.nw"))
-      (println "Extracting from" nw-archive))))
+              :use-lein-project-version true}))

@@ -3,33 +3,14 @@
            (java.io File FileOutputStream FileInputStream)
            (org.apache.commons.io FileUtils IOUtils))
   (:require [clj-http.client :as http]
-            [clj-semver.core :as semver]
             [fs.core :as fs]
             [clojure.data.json :as json]
             [clojure.java.io :as io :refer [output-stream]]
             [slingshot.slingshot :refer [throw+]]
             [taoensso.timbre :refer [log]]
-            [clojure.java.shell :refer [sh with-sh-dir]]))
-
-
-(defn version-list [url]
-  "Reads an HTTP URL formated as Apache Index looking for semantic version
-   numbers, then returns a sorted list of the semantic version numbers found.
-
-   It uses clj-semver to sort the version numbers."
-  (->> (http/get url)
-       :body
-       (re-seq #"v(\d+\.\d+\.\d+)")
-       (map second)
-       (set)
-       (sort semver/cmp)))
-
-(defn version-names [v]
-  {:version v
-   :platforms {:win (str "v" v (File/separator) "node-webkit-v" v "-win-ia32.zip")
-               :osx (str "v" v (File/separator) "node-webkit-v" v "-osx-ia32.zip")
-               :linux32 (str "v" v (File/separator) "node-webkit-v" v "-linux-ia32.tar.gz")
-               :linux64 (str "v" v (File/separator) "node-webkit-v" v "-linux-x64.tar.gz")}})
+            [clojure.java.shell :refer [sh with-sh-dir]]
+            [node-webkit-build.util :refer [insert-after]]
+            [node-webkit-build.versions :refer [versions-with-data]]))
 
 (defn wrap-downloaded-bytes-counter
   "Middleware that provides an CountingInputStream wrapping the stream output"
@@ -39,17 +20,6 @@
           counter (CountingInputStream. (:body resp))]
       (merge resp {:body counter
                    :downloaded-bytes-counter counter}))))
-
-(defn insert-at [v idx val]
-  (-> (subvec v 0 idx)
-      (conj val)
-      (concat (subvec v idx))))
-
-(defn insert-after [v needle val]
-  (let [index (.indexOf v needle)]
-    (if (neg? index)
-      v
-      (insert-at v (inc index) val))))
 
 (defn print-progress-bar
   "Render a simple progress bar given the progress and total. If the total is zero
@@ -91,18 +61,6 @@
                 (print-progress-bar (.getByteCount counter) length)
                 (recur))))))
       (println))))
-
-(defn map-values [f m]
-  (into {} (map (fn [[k v]] [k (f v)]) m)))
-
-(defn versions-with-data [url]
-  (let [full-path (partial str url)
-        full-platform-paths (fn [entry] (update-in entry
-                                                   [:platforms]
-                                                   (partial map-values full-path)))]
-    (->> (version-list url)
-         (map version-names)
-         (map full-platform-paths))))
 
 (defn read-fs-package [{:keys [root] :as req}]
   (with-open [reader (io/reader (io/file root "package.json"))]
@@ -176,6 +134,7 @@
   (let [app-path (path-join expanded-nw-package "node-webkit.app")
         output-path (path-join output (name platform) (str (get-in req [:package :name]) ".app"))
         patch-path (path-join output-path "Contents" "Resources" "app.nw")]
+    (FileUtils/deleteDirectory (io/file output-path))
     (log :info (str "Copying " app-path " into " output-path))
     (sh "cp" "-r" app-path output-path)
     (log :info (str "Copying app contents into " patch-path))
