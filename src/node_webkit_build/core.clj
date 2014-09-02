@@ -3,16 +3,11 @@
            (java.io File FileOutputStream FileInputStream)
            (org.apache.commons.io FileUtils IOUtils))
   (:require [clj-http.client :as http]
-            [fs.core :as fs]
             [clojure.data.json :as json]
-            [clojure.java.io :as io :refer [output-stream]]
             [slingshot.slingshot :refer [throw+]]
             [taoensso.timbre :refer [log]]
-            [clojure.java.shell :refer [sh with-sh-dir]]
-            [node-webkit-build.util :refer [insert-after]]
-            [node-webkit-build.versions :as versions]))
-
-(defn path-join [& parts] (clojure.string/join (File/separator) parts))
+            [node-webkit-build.versions :as versions]
+            [node-webkit-build.io :refer [path-join] :as io]))
 
 (def default-options
   {:platforms #{:osx :win :linux32 :linux64}
@@ -21,56 +16,6 @@
    :disable-developer-toolbar true
    :use-lein-project-version true
    :tmp-path (path-join "tmp" "nw-build")})
-
-(defn wrap-downloaded-bytes-counter
-  "Middleware that provides an CountingInputStream wrapping the stream output"
-  [client]
-  (fn [req]
-    (let [resp (client req)
-          counter (CountingInputStream. (:body resp))]
-      (merge resp {:body counter
-                   :downloaded-bytes-counter counter}))))
-
-(defn print-progress-bar
-  "Render a simple progress bar given the progress and total. If the total is zero
-   the progress will run as indeterminated."
-  ([progress total] (print-progress-bar progress total {}))
-  ([progress total {:keys [bar-width]
-                    :or   {bar-width 50}}]
-    (if (pos? total)
-      (let [pct (/ progress total)
-            render-bar (fn []
-                         (let [bars (Math/floor (* pct bar-width))
-                               pad (- bar-width bars)]
-                           (str (clojure.string/join (repeat bars "="))
-                                (clojure.string/join (repeat pad " ")))))]
-        (print (str "[" (render-bar) "] "
-                    (int (* pct 100)) "% "
-                    progress "/" total)))
-      (let [render-bar (fn [] (clojure.string/join (repeat bar-width "-")))]
-        (print (str "[" (render-bar) "] "
-                    progress "/?"))))))
-
-(defn download-with-progress [url target]
-  (http/with-middleware
-    (-> http/default-middleware
-        (insert-after http/wrap-redirects wrap-downloaded-bytes-counter)
-        (conj http/wrap-lower-case-headers))
-    (let [request (http/get url {:as :stream})
-          length (Integer. (get-in request [:headers "content-length"] 0))
-          buffer-size (* 1024 10)]
-      (with-open [input (:body request)
-                  output (output-stream target)]
-        (let [buffer (make-array Byte/TYPE buffer-size)
-              counter (:downloaded-bytes-counter request)]
-          (loop []
-            (let [size (.read input buffer)]
-              (when (pos? size)
-                (.write output buffer 0 size)
-                (print "\r")
-                (print-progress-bar (.getByteCount counter) length)
-                (recur))))))
-      (println))))
 
 (defn read-versions [req]
   (log :info "Reading node-webkit available versions")
@@ -95,22 +40,10 @@
              :version nw-version
              :available-versions versions})))
 
-(defn path-files [path]
-  (->> (fs/walk (fn [root _ files]
-                  (map #(path-join (.toString root) %) files)) path)
-       (flatten)
-       (set)
-       (filter fs/file?)))
-
-(defn relative-path [source target]
-  (let [source (fs/absolute-path source)
-        target (fs/absolute-path target)]
-    (.substring target (-> source count inc))))
-
 (defn read-files [{:keys [root] :as req}]
   (log :info "Reading files list")
-  (let [files (->> (path-files root)
-                   (map #(relative-path root %))
+  (let [files (->> (io/path-files root)
+                   (map #(io/relative-path root %))
                    (map #(vector % :read))
                    (vec))]
     (assoc req :files files)))
@@ -127,11 +60,11 @@
 
 (defn ensure-platform [{:keys [tmp-path platform nw-version] :as req}]
   (let [url (versions/url-for platform nw-version)
-        output-path (path-join tmp-path "node-webkit-cache" (fs/base-name url))]
-    (when-not (fs/exists? output-path)
+        output-path (path-join tmp-path "node-webkit-cache" (io/base-name url))]
+    (when-not (io/exists? output-path)
       (log :info (str "Downloading " url))
       (io/make-parents output-path)
-      (download-with-progress url output-path))
+      (io/download-with-progress url output-path))
     (assoc req :nw-package output-path)))
 
 (defn output-files [{:keys [files root tmp-path] :as req}]
@@ -150,12 +83,9 @@
           (IOUtils/copy in out))))
     (assoc req :build-path output)))
 
-(defn unzip [zip-path target-path]
-  (sh "unzip" "-q" zip-path "-d" target-path))
-
 (defn unzip-package [{:keys [nw-package tmp-path] :as req}]
-  (unzip nw-package tmp-path)
-  (assoc req :expanded-nw-package (path-join tmp-path (fs/base-name nw-package true))))
+  (io/unzip nw-package tmp-path)
+  (assoc req :expanded-nw-package (path-join tmp-path (io/base-name nw-package true))))
 
 (defn prepare-osx-build [{:keys [output expanded-nw-package platform build-path] :as req}]
   (let [app-path (path-join expanded-nw-package "node-webkit.app")
@@ -163,10 +93,10 @@
         patch-path (path-join output-path "Contents" "Resources" "app.nw")]
     (FileUtils/deleteDirectory (io/file output-path))
     (log :info (str "Copying " app-path " into " output-path))
-    (sh "cp" "-r" app-path output-path)
+    (io/copy app-path output-path)
     (log :info (str "Copying app contents into " patch-path))
     (io/make-parents patch-path)
-    (sh "cp" "-r" build-path patch-path)
+    (io/copy build-path patch-path)
     req))
 
 (defn build-osx [req]
