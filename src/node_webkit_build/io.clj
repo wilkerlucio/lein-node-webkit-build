@@ -7,6 +7,14 @@
             [clojure.java.shell :refer [sh with-sh-dir]]
             [node-webkit-build.util :refer [insert-after print-progress-bar]]))
 
+;; aliases
+(def reader #'io/reader)
+(def file #'io/file)
+(def make-parents #'io/make-parents)
+
+(def base-name #'fs/base-name)
+(def exists? #'fs/exists?)
+
 (defn path-join [& parts] (clojure.string/join (File/separator) parts))
 
 (defn path-files [path]
@@ -45,13 +53,6 @@
                 (print-progress-bar (.getByteCount counter) length)
                 (recur))))))
       (println))))
-
-(def reader #'io/reader)
-(def file #'io/file)
-(def make-parents #'io/make-parents)
-
-(def base-name #'fs/base-name)
-(def exists? #'fs/exists?)
 
 (defn copy [input output]
   (sh "cp" "-r" input output))

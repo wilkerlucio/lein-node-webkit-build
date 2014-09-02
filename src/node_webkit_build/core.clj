@@ -1,6 +1,5 @@
 (ns node-webkit-build.core
-  (:import (org.apache.commons.io.input CountingInputStream)
-           (java.io File FileOutputStream FileInputStream)
+  (:import (java.io FileOutputStream FileInputStream)
            (org.apache.commons.io FileUtils IOUtils))
   (:require [clojure.data.json :as json]
             [slingshot.slingshot :refer [throw+]]
@@ -16,6 +15,10 @@
    :use-lein-project-version true
    :tmp-path (path-join "tmp" "nw-build")})
 
+(defn app-name [req]
+  (or (get req :name)
+      (get-in req [:package :name])))
+
 (defn read-versions [req]
   (log :info "Reading node-webkit available versions")
   (assoc req :nw-available-versions (versions/versions-list)))
@@ -26,18 +29,18 @@
     (let [data (json/read reader :key-fn keyword)]
       (assoc req :package data))))
 
-(defn normalize-version [{:keys [nw-version versions] :as req}]
+(defn normalize-version [{:keys [nw-version nw-available-versions] :as req}]
   (if (= nw-version :latest)
-    (assoc req :nw-version (last versions))
+    (assoc req :nw-version (last nw-available-versions))
     req))
 
-(defn verify-version [{:keys [nw-version versions] :as req}]
-  (if ((set versions) nw-version)
+(defn verify-version [{:keys [nw-version nw-available-versions] :as req}]
+  (if ((set nw-available-versions) nw-version)
     req
     (throw+ {:type ::invalid-version
              :message (str "Version " nw-version " is not available.")
              :version nw-version
-             :available-versions versions})))
+             :available-versions nw-available-versions})))
 
 (defn read-files [{:keys [root] :as req}]
   (log :info "Reading files list")
@@ -88,7 +91,7 @@
 
 (defn prepare-osx-build [{:keys [output expanded-nw-package platform build-path] :as req}]
   (let [app-path (path-join expanded-nw-package "node-webkit.app")
-        output-path (path-join output (name platform) (str (get-in req [:package :name]) ".app"))
+        output-path (path-join output (name platform) (str (app-name req) ".app"))
         patch-path (path-join output-path "Contents" "Resources" "app.nw")]
     (FileUtils/deleteDirectory (io/file output-path))
     (log :info (str "Copying " app-path " into " output-path))
@@ -99,13 +102,14 @@
     req))
 
 (defn build-osx [req]
-  (when ((get req :platforms #{}) :osx)
-    (log :info "Building OSX")
-    (-> (assoc req :platform :osx)
-        (ensure-platform)
-        (unzip-package)
-        (prepare-osx-build)))
-  req)
+  (if ((get req :platforms #{}) :osx)
+    (do
+      (log :info "Building OSX")
+      (-> (assoc req :platform :osx)
+          (ensure-platform)
+          (unzip-package)
+          (prepare-osx-build)))
+    req))
 
 (defn build-app [options]
   (-> (merge default-options options)

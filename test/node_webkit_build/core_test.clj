@@ -44,19 +44,19 @@
 (deftest test-normalize-version
   (is (= "0.9.1"
          (:nw-version (normalize-version {:nw-version "0.9.1"
-                                          :versions   versions-list}))))
+                                          :nw-available-versions versions-list}))))
   (is (= "0.10.2"
          (:nw-version (normalize-version {:nw-version :latest
-                                          :versions   versions-list})))))
+                                          :nw-available-versions versions-list})))))
 
 (deftest test-verify-version
   (is (= {:nw-version "0.9.1"
-          :versions versions-list}
+          :nw-available-versions versions-list}
          (verify-version {:nw-version "0.9.1"
-                          :versions versions-list})))
+                          :nw-available-versions versions-list})))
   (is (thrown+? [:type ::node-webkit-build.core/invalid-version]
         (verify-version {:nw-version "0.3.4"
-                         :versions versions-list}))))
+                         :nw-available-versions versions-list}))))
 
 (deftest test-prepare-json
   (testing "it outputs the package contents as json data into package.json"
@@ -84,6 +84,17 @@
     (let [response (read-files {:root "test/fixtures/sample-app"})]
       (is (= [["package.json" :read]]
              (:files response))))))
+
+(deftest test-app-name
+  (is (= "Sample App"
+         (app-name {:name "Sample App"})))
+  (is (= "sample-app"
+         (app-name {:package {:name "sample-app"}})))
+  (is (= "Sample App"
+         (app-name {:name "Sample App"
+                    :package {:name "sample-app"}})))
+  (is (= nil
+         (app-name {}))))
 
 (deftest test-build-app
   (testing "full integration"
