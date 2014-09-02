@@ -1,6 +1,6 @@
-(defproject node-webkit-build "0.1.0-SNAPSHOT"
-  :description "FIXME: write description"
-  :url "http://example.com/FIXME"
+(defproject lein-node-webkit-build "0.1.0-SNAPSHOT"
+  :description "Builder to pack node-webkit applicatons with leinigen"
+  :url "https://github.com/wilkerlucio/lein-node-webkit-build"
   :license {:name "Eclipse Public License"
             :url "http://www.eclipse.org/legal/epl-v10.html"}
   :eval-in-leiningen true
