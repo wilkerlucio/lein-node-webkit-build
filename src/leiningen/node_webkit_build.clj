@@ -5,6 +5,4 @@
 (defn node-webkit-build
   "Generates a Node-Webkit build."
   [project & _]
-  (-> (build-app (:node-webkit-build project))
-      (dissoc :files)
-      (pprint)))
+  (build-app (:node-webkit-build project)))

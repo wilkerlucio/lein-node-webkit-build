@@ -121,7 +121,7 @@
         resources-path (path-join output-path "Contents" "Resources")
         patch-path (path-join resources-path "app.nw")]
     (FileUtils/deleteDirectory (io/file output-path))
-    (io/mkdirs output-path)
+    (io/make-parents output-path)
     (log :info (str "Copying " app-path " into " output-path))
     ;; using FileUtils/copyDirectory corrupts the files preventing the app from launch
     ;; falling back for system copy until figure out the problem
