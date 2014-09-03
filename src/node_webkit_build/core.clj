@@ -104,8 +104,8 @@
     (FileUtils/copyDirectory (io/file expanded-nw-package) output)
     (assoc build :release-path output)))
 
-(defn copy-app-package [{:keys [release-path app-pack] :as build} _]
-  (let [pack-target (io/file release-path "nw.exe")]
+(defn merge-app-contents [{:keys [release-path app-pack] :as build} executable]
+  (let [pack-target (io/file release-path executable)]
     (log :info "Merging app contents into executable" pack-target)
     (with-open [in (io/input-stream app-pack)
                 out (FileOutputStream. pack-target true)]
@@ -135,17 +135,23 @@
   (-> build
       (create-app-package req)
       (copy-nw-contents req)
-      (copy-app-package req)))
+      (merge-app-contents "nw.exe")))
+
+(defn linux-build [build req]
+  (-> build
+      (create-app-package req)
+      (copy-nw-contents req)
+      (merge-app-contents "nw")))
 
 (defmethod prepare-build :linux32
-  [build _]
+  [build req]
   (log :info "Preparing Linux32 build")
-  build)
+  (linux-build build req))
 
 (defmethod prepare-build :linux64
-  [build _]
+  [build req]
   (log :info "Preparing Linux64 build")
-  build)
+  (linux-build build req))
 
 (defn build-platform [req platform]
   (log :info "Building" (name platform))
