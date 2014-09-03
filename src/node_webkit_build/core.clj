@@ -112,6 +112,12 @@
       (IOUtils/copy in out)))
   build)
 
+(defn linux-build [build req]
+  (-> build
+      (create-app-package req)
+      (copy-nw-contents req)
+      (merge-app-contents "nw")))
+
 (defmulti prepare-build (fn [build _] (:platform build)))
 
 (defmethod prepare-build :osx
@@ -120,15 +126,10 @@
         output-path (path-join output (name platform) (str (app-name req) ".app"))
         resources-path (path-join output-path "Contents" "Resources")
         patch-path (path-join resources-path "app.nw")]
-    (FileUtils/deleteDirectory (io/file output-path))
-    (io/make-parents output-path)
     (log :info (str "Copying " app-path " into " output-path))
-    ;; using FileUtils/copyDirectory corrupts the files preventing the app from launch
-    ;; falling back for system copy until figure out the problem
-    (io/copy app-path output-path)
+    (io/copy-ensuring-blank app-path output-path)
     (log :info (str "Copying app contents into " patch-path))
-    (io/make-parents patch-path)
-    (FileUtils/copyDirectory (io/file build-path) (io/file patch-path))
+    (io/copy-ensuring-blank build-path patch-path)
     (merge build {:resources-path resources-path})))
 
 (defmethod prepare-build :win
@@ -138,12 +139,6 @@
       (create-app-package req)
       (copy-nw-contents req)
       (merge-app-contents "nw.exe")))
-
-(defn linux-build [build req]
-  (-> build
-      (create-app-package req)
-      (copy-nw-contents req)
-      (merge-app-contents "nw")))
 
 (defmethod prepare-build :linux32
   [build req]

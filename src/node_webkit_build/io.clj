@@ -1,7 +1,7 @@
 (ns node-webkit-build.io
   (:import (java.io File FileOutputStream FileInputStream)
            (org.apache.commons.io.input CountingInputStream)
-           (org.apache.commons.io FilenameUtils))
+           (org.apache.commons.io FilenameUtils FileUtils))
   (:require [clj-http.client :as http]
             [fs.core :as fs]
             [fs.compression :as compression]
@@ -91,3 +91,10 @@
   (let [source (fs/absolute-path source)
         target (fs/absolute-path target)]
     (.substring target (-> source count inc))))
+
+(defn copy-ensuring-blank [source target]
+  (FileUtils/deleteDirectory (io/file target))
+  (make-parents target)
+  ;; using FileUtils/copyDirectory corrupts the files preventing the app from launch
+  ;; falling back for system copy until figure out the problem
+  (copy source target))
