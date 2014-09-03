@@ -3,6 +3,7 @@
             [clojure.data.json :as json]
             [vcr-clj.clj-http :refer [with-cassette]]
             [node-webkit-build.core :refer :all]
+            [node-webkit-build.io :as io]
             [slingshot.test]
             [taoensso.timbre :as timbre]))
 
@@ -95,6 +96,14 @@
                     :package {:name "sample-app"}})))
   (is (= nil
          (app-name {}))))
+
+(deftest test-osx-icon
+  (let [res-path (io/path-join "tmp" "resources")]
+    (io/mkdirs res-path)
+    (osx-icon {:builds {:osx {:resources-path res-path}}
+               :osx    {:icon (io/path-join "test" "fixtures" "icon.icns")}})
+    (is (= "icon contents"
+           (slurp (io/path-join res-path "icon.icns"))))))
 
 (deftest test-build-app
   (testing "full integration"

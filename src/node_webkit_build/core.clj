@@ -118,7 +118,8 @@
   [{:keys [expanded-nw-package platform] :as build} {:keys [output build-path] :as req}]
   (let [app-path (path-join expanded-nw-package "node-webkit.app")
         output-path (path-join output (name platform) (str (app-name req) ".app"))
-        patch-path (path-join output-path "Contents" "Resources" "app.nw")]
+        resources-path (path-join output-path "Contents" "Resources")
+        patch-path (path-join resources-path "app.nw")]
     (FileUtils/deleteDirectory (io/file output-path))
     (log :info (str "Copying " app-path " into " output-path))
     ;; using FileUtils/copyDirectory corrupts the files preventing the app from launch
@@ -127,7 +128,7 @@
     (log :info (str "Copying app contents into " patch-path))
     (io/make-parents patch-path)
     (FileUtils/copyDirectory (io/file build-path) (io/file patch-path))
-    build))
+    (merge build {:resources-path resources-path})))
 
 (defmethod prepare-build :win
   [build req]
@@ -164,6 +165,13 @@
 (defn build-platforms [{:keys [platforms] :as req}]
   (reduce build-platform req platforms))
 
+(defn osx-icon [req]
+  (when-let [icon (get-in req [:osx :icon])]
+    (log :info "Applying OSX icon" icon)
+    (let [res-path (get-in req [:builds :osx :resources-path])]
+      (FileUtils/copyFile (io/file icon) (io/file res-path "nw.icns"))))
+  req)
+
 (defn build-app [options]
   (-> (merge default-options options)
       read-versions
@@ -174,4 +182,5 @@
       disable-developer-toolbar
       prepare-package-json
       output-files
-      build-platforms))
+      build-platforms
+      osx-icon))
