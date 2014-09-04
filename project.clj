@@ -1,8 +1,9 @@
 (defproject lein-node-webkit-build "0.1.0-SNAPSHOT"
   :description "Builder to pack node-webkit applicatons with leinigen"
   :url "https://github.com/wilkerlucio/lein-node-webkit-build"
-  :license {:name "Eclipse Public License"
-            :url "http://www.eclipse.org/legal/epl-v10.html"}
+  :license {:name "The MIT License"
+            :url "http://opensource.org/licenses/mit-license.php"
+            :distribution :repo}
   :eval-in-leiningen true
 
   :dependencies [[org.clojure/clojure "1.6.0"]
