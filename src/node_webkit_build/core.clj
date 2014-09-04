@@ -6,7 +6,8 @@
             [taoensso.timbre :refer [log]]
             [node-webkit-build.versions :as versions]
             [node-webkit-build.io :refer [path-join] :as io]
-            [fs.core :as fs]))
+            [fs.core :as fs]
+            [com.github.bdesham.clj-plist :refer [parse-plist]]))
 
 (def default-options
   {:platforms #{:osx :win :linux32 :linux64}
@@ -138,6 +139,10 @@
     (io/copy-ensuring-blank build-path patch-path)
     (assoc build :resources-path resources-path)))
 
+(defn osx-read-info-plist [{:keys [resources-path] :as build}]
+  (let [plist-file (io/file resources-path "Info.plist")]
+    (assoc build :info (parse-plist plist-file))))
+
 (defn osx-icon [{:keys [resources-path] :as build} req]
   (when-let [icon (get-in req [:osx :icon])]
     (log :info "Applying OSX icon" icon)
@@ -150,6 +155,7 @@
   (-> build
       (osx-copy-nw-contents req)
       (osx-inject-app-contents req)
+      (osx-read-info-plist)
       (osx-icon req)))
 
 ;; Windows Builder

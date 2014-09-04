@@ -100,6 +100,24 @@
     (is (thrown+? [:type ::node-webkit-build.core/unsupported-input] (output-files {:files [["sample.txt" :invalid]]
                                                                                     :output "test/fixtures/sample-app-out"})))))
 
+(deftest test-osx-read-info-plist
+  (let [res (osx-read-info-plist {:resources-path (io/path-join "test" "fixtures")})]
+    (is (= {"CFBundleDisplayName"   "node-webkit"
+            "CFBundleDocumentTypes" [{"CFBundleTypeIconFile" "nw.icns"
+                                      "CFBundleTypeName"     "node-webkit App"
+                                      "CFBundleTypeRole"     "Viewer"
+                                      "LSHandlerRank"        "Owner"
+                                      "LSItemContentTypes"   ["com.intel.nw.app"]}
+                                     {"CFBundleTypeName"    "Folder"
+                                      "CFBundleTypeOSTypes" ["fold"]
+                                      "CFBundleTypeRole"    "Viewer"
+                                      "LSHandlerRank"       "None"}]
+            "CFBundleExecutable"            "node-webkit"
+            "CFBundleIconFile"              "nw.icns"
+            "CFBundleIdentifier"            "com.intel.nw"
+            "CFBundleInfoDictionaryVersion" "6.0"}
+           (:info res)))))
+
 (deftest test-osx-icon
   (let [res-path (io/path-join "tmp" "resources")]
     (io/mkdirs res-path)

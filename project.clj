@@ -12,6 +12,7 @@
                  [commons-io "2.4"]
                  [me.raynes/fs "1.4.4"]
                  [slingshot "0.10.3"]
-                 [com.taoensso/timbre "3.2.1"]]
+                 [com.taoensso/timbre "3.2.1"]
+                 [bdesham/clj-plist "0.9.1"]]
 
   :profiles {:dev {:dependencies [[com.gfredericks/vcr-clj "0.4.0"]]}})
