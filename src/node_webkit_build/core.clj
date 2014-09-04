@@ -133,15 +133,22 @@
     (assoc build :release-path output-path)))
 
 (defn osx-inject-app-contents [{:keys [release-path] :as build} {:keys [build-path]}]
-  (let [resources-path (path-join release-path "Contents" "Resources")
+  (let [contents-path (path-join release-path "Contents")
+        resources-path (path-join contents-path "Resources")
         patch-path (path-join resources-path "app.nw")]
     (log :info (str "Copying app contents into " patch-path))
     (io/copy-ensuring-blank build-path patch-path)
-    (assoc build :resources-path resources-path)))
+    (merge build {:resources-path resources-path
+                  :contents-path contents-path})))
 
-(defn osx-read-info-plist [{:keys [resources-path] :as build}]
-  (let [plist-file (io/file resources-path "Info.plist")]
-    (assoc build :info (parse-plist plist-file))))
+(defn osx-read-info-plist [{:keys [contents-path] :as build}]
+  (log :info "Reading Info.plist")
+  (let [plist-file (io/file contents-path "Info.plist")]
+    (if (io/exists? plist-file)
+      (assoc build :info (parse-plist plist-file))
+      (do
+        (log :info "Can't find Info.list at" plist-file)
+        build))))
 
 (defn osx-icon [{:keys [resources-path] :as build} req]
   (when-let [icon (get-in req [:osx :icon])]

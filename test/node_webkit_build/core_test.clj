@@ -101,7 +101,7 @@
                                                                                     :output "test/fixtures/sample-app-out"})))))
 
 (deftest test-osx-read-info-plist
-  (let [res (osx-read-info-plist {:resources-path (io/path-join "test" "fixtures")})]
+  (let [res (osx-read-info-plist {:contents-path (io/path-join "test" "fixtures")})]
     (is (= {"CFBundleDisplayName"   "node-webkit"
             "CFBundleDocumentTypes" [{"CFBundleTypeIconFile" "nw.icns"
                                       "CFBundleTypeName"     "node-webkit App"
@@ -116,7 +116,9 @@
             "CFBundleIconFile"              "nw.icns"
             "CFBundleIdentifier"            "com.intel.nw"
             "CFBundleInfoDictionaryVersion" "6.0"}
-           (:info res)))))
+           (:info res))))
+  (is (= nil)
+      (:info (osx-read-info-plist {}))))
 
 (deftest test-osx-icon
   (let [res-path (io/path-join "tmp" "resources")]
