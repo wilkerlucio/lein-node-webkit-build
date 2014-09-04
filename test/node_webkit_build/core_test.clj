@@ -12,29 +12,6 @@
 
 (timbre/set-level! :warn)
 
-(deftest test-read-fs-package
-  (testing "reading a valid package.json file"
-    (let [params (read-package {:root "test/fixtures/sample-app"})]
-      (is (= {:name   "sample-app"
-              :version "0.0.1"}
-             (:package params))))))
-
-(deftest test-output-files
-  (testing "outputs the string contents"
-    (output-files {:files [["sample.txt" "sample content"]]
-                   :tmp-output "test/fixtures/sample-app-out"})
-    (is (= "sample content"
-           (slurp "test/fixtures/sample-app-out/sample.txt"))))
-  (testing "reads from the root"
-    (output-files {:files [["package.json" :read]]
-                   :root "test/fixtures/sample-app"
-                   :tmp-output "test/fixtures/sample-app-out"})
-    (is (= (slurp "test/fixtures/sample-app/package.json")
-           (slurp "test/fixtures/sample-app-out/package.json"))))
-  (testing "throw error if unsupported input is given"
-    (is (thrown+? [:type ::node-webkit-build.core/unsupported-input] (output-files {:files [["sample.txt" :invalid]]
-                                                                                    :output "test/fixtures/sample-app-out"})))))
-
 (deftest test-read-versions
   (testing "read the version list and add into the request"
     (with-cassette :dl-node-webkit
@@ -56,35 +33,15 @@
          (verify-version {:nw-version "0.9.1"
                           :nw-available-versions versions-list})))
   (is (thrown+? [:type ::node-webkit-build.core/invalid-version]
-        (verify-version {:nw-version "0.3.4"
-                         :nw-available-versions versions-list}))))
+                (verify-version {:nw-version "0.3.4"
+                                 :nw-available-versions versions-list}))))
 
-(deftest test-prepare-json
-  (testing "it outputs the package contents as json data into package.json"
-    (let [package-data {:info "here"}
-          res (prepare-package-json {:package package-data
-                                     :files [["a" "b"]]})]
-      (is (= [["a" "b"]
-              ["package.json" (json/write-str package-data)]]
-             (:files res))))))
-
-(deftest test-disable-developer-toolbar
-  (testing "marks package info to disable toolbar"
-    (let [res (disable-developer-toolbar {:disable-developer-toolbar true})]
-      (is (= false
-             (get-in res [:package :window :toolbar]))))
-    (let [res (disable-developer-toolbar {})]
-      (is (= false
-             (get-in res [:package :window :toolbar]))))
-    (let [res (disable-developer-toolbar {:disable-developer-toolbar false})]
-      (is (= nil
-             (get-in res [:package :window :toolbar]))))))
-
-(deftest test-read-files
-  (testing "reading from a root"
-    (let [response (read-files {:root "test/fixtures/sample-app"})]
-      (is (= [["package.json" :read]]
-             (:files response))))))
+(deftest test-read-package
+  (testing "reading a valid package.json file"
+    (let [params (read-package {:root "test/fixtures/sample-app"})]
+      (is (= {:name   "sample-app"
+              :version "0.0.1"}
+             (:package params))))))
 
 (deftest test-update-app-name
   (is (= {:name    "New Name"
@@ -100,6 +57,49 @@
   (is (= {:package {:version "0.0.0"}}
          (update-app-version {:package {:version "0.0.0"}}))))
 
+(deftest test-read-files
+  (testing "reading from a root"
+    (let [response (read-files {:root "test/fixtures/sample-app"})]
+      (is (= [["package.json" :read]]
+             (:files response))))))
+
+(deftest test-disable-developer-toolbar
+  (testing "marks package info to disable toolbar"
+    (let [res (disable-developer-toolbar {:disable-developer-toolbar true})]
+      (is (= false
+             (get-in res [:package :window :toolbar]))))
+    (let [res (disable-developer-toolbar {})]
+      (is (= false
+             (get-in res [:package :window :toolbar]))))
+    (let [res (disable-developer-toolbar {:disable-developer-toolbar false})]
+      (is (= nil
+             (get-in res [:package :window :toolbar]))))))
+
+(deftest test-prepare-package-json
+  (testing "it outputs the package contents as json data into package.json"
+    (let [package-data {:info "here"}
+          res (prepare-package-json {:package package-data
+                                     :files [["a" "b"]]})]
+      (is (= [["a" "b"]
+              ["package.json" (json/write-str package-data)]]
+             (:files res))))))
+
+(deftest test-output-files
+  (testing "outputs the string contents"
+    (output-files {:files [["sample.txt" "sample content"]]
+                   :tmp-output "test/fixtures/sample-app-out"})
+    (is (= "sample content"
+           (slurp "test/fixtures/sample-app-out/sample.txt"))))
+  (testing "reads from the root"
+    (output-files {:files [["package.json" :read]]
+                   :root "test/fixtures/sample-app"
+                   :tmp-output "test/fixtures/sample-app-out"})
+    (is (= (slurp "test/fixtures/sample-app/package.json")
+           (slurp "test/fixtures/sample-app-out/package.json"))))
+  (testing "throw error if unsupported input is given"
+    (is (thrown+? [:type ::node-webkit-build.core/unsupported-input] (output-files {:files [["sample.txt" :invalid]]
+                                                                                    :output "test/fixtures/sample-app-out"})))))
+
 (deftest test-osx-icon
   (let [res-path (io/path-join "tmp" "resources")]
     (io/mkdirs res-path)
@@ -107,12 +107,3 @@
               {:osx {:icon (io/path-join "test" "fixtures" "icon.icns")}})
     (is (= "icon contents\n"
            (slurp (io/path-join res-path "nw.icns"))))))
-
-(deftest test-build-app
-  (testing "full integration"
-    #_ (build-app {:root "/Users/wilkerlucio/Development/sm2/smgui/public"
-                :output "releases/nw-build"
-                :platforms #{:osx :win :linux32 :linux64}
-                :osx {:icon "icon-path"}
-                :disable-developer-toolbar true
-                :use-lein-project-version true})))
