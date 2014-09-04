@@ -8,7 +8,8 @@
   [project & _]
   (let [check-nil (fn [req]
                     (if-not req (throw+ {:type ::nil-configuration
-                                         :message "You need to setup :node-webkit-build on your project.clj"})))
+                                         :message "You need to setup :node-webkit-build on your project.clj"})
+                                req))
         use-lein-version (fn [req]
                            (if (:use-lein-project-version req)
                              (assoc req :version (:version project))
