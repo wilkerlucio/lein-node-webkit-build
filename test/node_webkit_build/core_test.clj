@@ -100,10 +100,10 @@
 (deftest test-osx-icon
   (let [res-path (io/path-join "tmp" "resources")]
     (io/mkdirs res-path)
-    (osx-icon {:builds {:osx {:resources-path res-path}}
-               :osx    {:icon (io/path-join "test" "fixtures" "icon.icns")}})
-    (is (= "icon contents"
-           (slurp (io/path-join res-path "icon.icns"))))))
+    (osx-icon {:resources-path res-path}
+              {:osx {:icon (io/path-join "test" "fixtures" "icon.icns")}})
+    (is (= "icon contents\n"
+           (slurp (io/path-join res-path "nw.icns"))))))
 
 (deftest test-build-app
   (testing "full integration"

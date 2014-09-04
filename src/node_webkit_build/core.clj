@@ -112,25 +112,39 @@
       (IOUtils/copy in out)))
   build)
 
-(defn linux-build [build req]
-  (-> build
-      (create-app-package req)
-      (copy-nw-contents req)
-      (merge-app-contents "nw")))
-
 (defmulti prepare-build (fn [build _] (:platform build)))
 
-(defmethod prepare-build :osx
-  [{:keys [expanded-nw-package platform] :as build} {:keys [output build-path] :as req}]
+;; OSX Builder
+
+(defn osx-copy-nw-contents [{:keys [expanded-nw-package platform] :as build} {:keys [output] :as req}]
   (let [app-path (path-join expanded-nw-package "node-webkit.app")
-        output-path (path-join output (name platform) (str (app-name req) ".app"))
-        resources-path (path-join output-path "Contents" "Resources")
-        patch-path (path-join resources-path "app.nw")]
+        output-path (path-join output (name platform) (str (app-name req) ".app"))]
     (log :info (str "Copying " app-path " into " output-path))
     (io/copy-ensuring-blank app-path output-path)
+    (assoc build :release-path output-path)))
+
+(defn osx-inject-app-contents [{:keys [release-path] :as build} {:keys [build-path]}]
+  (let [resources-path (path-join release-path "Contents" "Resources")
+        patch-path (path-join resources-path "app.nw")]
     (log :info (str "Copying app contents into " patch-path))
     (io/copy-ensuring-blank build-path patch-path)
-    (merge build {:resources-path resources-path})))
+    (assoc build :resources-path resources-path)))
+
+(defn osx-icon [{:keys [resources-path] :as build} req]
+  (when-let [icon (get-in req [:osx :icon])]
+    (log :info "Applying OSX icon" icon)
+    (io/mkdirs resources-path)
+    (FileUtils/copyFile (io/file icon) (io/file resources-path "nw.icns")))
+  build)
+
+(defmethod prepare-build :osx
+  [build req]
+  (-> build
+      (osx-copy-nw-contents req)
+      (osx-inject-app-contents req)
+      (osx-icon req)))
+
+;; Windows Builder
 
 (defmethod prepare-build :win
   [build req]
@@ -139,6 +153,14 @@
       (create-app-package req)
       (copy-nw-contents req)
       (merge-app-contents "nw.exe")))
+
+;; Linux Builder
+
+(defn linux-build [build req]
+  (-> build
+      (create-app-package req)
+      (copy-nw-contents req)
+      (merge-app-contents "nw")))
 
 (defmethod prepare-build :linux32
   [build req]
@@ -161,13 +183,6 @@
 (defn build-platforms [{:keys [platforms] :as req}]
   (reduce build-platform req platforms))
 
-(defn osx-icon [req]
-  (when-let [icon (get-in req [:osx :icon])]
-    (log :info "Applying OSX icon" icon)
-    (let [res-path (get-in req [:builds :osx :resources-path])]
-      (FileUtils/copyFile (io/file icon) (io/file res-path "nw.icns"))))
-  req)
-
 (defn build-app [options]
   (-> (merge default-options options)
       read-versions
@@ -178,5 +193,4 @@
       disable-developer-toolbar
       prepare-package-json
       output-files
-      build-platforms
-      osx-icon))
+      build-platforms))
