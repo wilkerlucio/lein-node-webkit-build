@@ -16,9 +16,15 @@
    :use-lein-project-version true
    :tmp-path (path-join "tmp" "nw-build")})
 
-(defn app-name [req]
-  (or (get req :name)
-      (get-in req [:package :name])))
+(defn update-app-name [{:keys [name] :as req}]
+  (if name
+    (assoc-in req [:package :name] name)
+    req))
+
+(defn update-app-version [{:keys [version] :as req}]
+  (if version
+    (assoc-in req [:package :version] version)
+    req))
 
 (defn read-versions [req]
   (log :info "Reading node-webkit available versions")
@@ -98,7 +104,7 @@
     (assoc build :app-pack package-path)))
 
 (defn copy-nw-contents [{:keys [platform expanded-nw-package] :as build} {:keys [output] :as req}]
-  (let [output (io/file output (name platform) (app-name req))]
+  (let [output (io/file output (name platform) (get-in req [:package :name]))]
     (log :info "Copying" expanded-nw-package "into" output)
     (io/mkdirs output)
     (FileUtils/copyDirectory (io/file expanded-nw-package) output)
@@ -118,7 +124,7 @@
 
 (defn osx-copy-nw-contents [{:keys [expanded-nw-package platform] :as build} {:keys [output] :as req}]
   (let [app-path (path-join expanded-nw-package "node-webkit.app")
-        output-path (path-join output (name platform) (str (app-name req) ".app"))]
+        output-path (path-join output (name platform) (str (get-in req [:package :name]) ".app"))]
     (log :info (str "Copying " app-path " into " output-path))
     (io/copy-ensuring-blank app-path output-path)
     (assoc build :release-path output-path)))
@@ -189,6 +195,8 @@
       normalize-version
       verify-version
       read-package
+      update-app-name
+      update-app-version
       read-files
       disable-developer-toolbar
       prepare-package-json

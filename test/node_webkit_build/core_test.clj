@@ -86,16 +86,19 @@
       (is (= [["package.json" :read]]
              (:files response))))))
 
-(deftest test-app-name
-  (is (= "Sample App"
-         (app-name {:name "Sample App"})))
-  (is (= "sample-app"
-         (app-name {:package {:name "sample-app"}})))
-  (is (= "Sample App"
-         (app-name {:name "Sample App"
-                    :package {:name "sample-app"}})))
-  (is (= nil
-         (app-name {}))))
+(deftest test-update-app-name
+  (is (= {:name    "New Name"
+          :package {:name "New Name"}}
+         (update-app-name {:name "New Name"})))
+  (is (= {:package {:name "old-name"}}
+         (update-app-name {:package {:name "old-name"}}))))
+
+(deftest test-update-app-version
+  (is (= {:version "0.1.0"
+          :package {:version "0.1.0"}}
+         (update-app-version {:version "0.1.0"})))
+  (is (= {:package {:version "0.0.0"}}
+         (update-app-version {:package {:version "0.0.0"}}))))
 
 (deftest test-osx-icon
   (let [res-path (io/path-join "tmp" "resources")]
