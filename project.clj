@@ -16,4 +16,5 @@
                  [com.taoensso/timbre "3.2.1"]
                  [bdesham/clj-plist "0.9.1"]]
 
-  :profiles {:dev {:dependencies [[com.gfredericks/vcr-clj "0.4.0"]]}})
+  :profiles {:dev {:dependencies [[com.gfredericks/vcr-clj "0.4.0"]]}}
+  :deploy-repositories [["releases" :clojars]])
