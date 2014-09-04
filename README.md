@@ -45,7 +45,7 @@ The following options are available to customize the build:
   :output "releases" ; output directory for the generated builds
   :disable-developer-toolbar true ; this will update your package.json to remove the developer toolbar
   :use-lein-project-version true ; update the project version using your leiningen project version
-  :tmp-path (path-join "tmp" "nw-build") ; temporary path to place intermediate build files }
+  :tmp-path (path-join "tmp" "nw-build")} ; temporary path to place intermediate build files
 ```
 
 This project still very young and all feedback will be great to improve it.
