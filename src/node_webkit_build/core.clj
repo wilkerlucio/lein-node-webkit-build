@@ -16,25 +16,9 @@
    :use-lein-project-version true
    :tmp-path (path-join "tmp" "nw-build")})
 
-(defn update-app-name [{:keys [name] :as req}]
-  (if name
-    (assoc-in req [:package :name] name)
-    req))
-
-(defn update-app-version [{:keys [version] :as req}]
-  (if version
-    (assoc-in req [:package :version] version)
-    req))
-
 (defn read-versions [req]
   (log :info "Reading node-webkit available versions")
   (assoc req :nw-available-versions (versions/versions-list)))
-
-(defn read-package [{:keys [root] :as req}]
-  (log :info "Reading package.json")
-  (with-open [reader (io/reader (io/file root "package.json"))]
-    (let [data (json/read reader :key-fn keyword)]
-      (assoc req :package data))))
 
 (defn normalize-version [{:keys [nw-version nw-available-versions] :as req}]
   (if (= nw-version :latest)
@@ -49,6 +33,22 @@
              :version nw-version
              :available-versions nw-available-versions})))
 
+(defn read-package [{:keys [root] :as req}]
+  (log :info "Reading package.json")
+  (with-open [reader (io/reader (io/file root "package.json"))]
+    (let [data (json/read reader :key-fn keyword)]
+      (assoc req :package data))))
+
+(defn update-app-name [{:keys [name] :as req}]
+  (if name
+    (assoc-in req [:package :name] name)
+    req))
+
+(defn update-app-version [{:keys [version] :as req}]
+  (if version
+    (assoc-in req [:package :version] version)
+    req))
+
 (defn read-files [{:keys [root] :as req}]
   (log :info "Reading files list")
   (let [files (->> (io/path-files root)
@@ -57,9 +57,6 @@
                    (vec))]
     (assoc req :files files)))
 
-(defn prepare-package-json [{:keys [package] :as req}]
-  (update-in req [:files] #(conj % ["package.json" (json/write-str package)])))
-
 (defn disable-developer-toolbar [{:keys [disable-developer-toolbar]
                                   :or {disable-developer-toolbar true}
                                   :as req}]
@@ -67,14 +64,8 @@
     (assoc-in req [:package :window :toolbar] false)
     req))
 
-(defn ensure-platform [{:keys [platform] :as build} {:keys [tmp-path nw-version]}]
-  (let [url (versions/url-for platform nw-version)
-        output-path (path-join tmp-path "node-webkit-cache" (io/base-name url))]
-    (when-not (io/exists? output-path)
-      (log :info (str "Downloading " url))
-      (io/make-parents output-path)
-      (io/download-with-progress url output-path))
-    (assoc build :nw-package output-path)))
+(defn prepare-package-json [{:keys [package] :as req}]
+  (update-in req [:files] #(conj % ["package.json" (json/write-str package)])))
 
 (defn output-files [{:keys [files root tmp-path] :as req}]
   (log :info "Writing package files")
@@ -90,6 +81,17 @@
           (io/make-parents file)
           (FileUtils/copyInputStreamToFile input-stream file))))
     (assoc req :build-path output)))
+
+;; Packaging
+
+(defn ensure-platform [{:keys [platform] :as build} {:keys [tmp-path nw-version]}]
+  (let [url (versions/url-for platform nw-version)
+        output-path (path-join tmp-path "node-webkit-cache" (io/base-name url))]
+    (when-not (io/exists? output-path)
+      (log :info (str "Downloading " url))
+      (io/make-parents output-path)
+      (io/download-with-progress url output-path))
+    (assoc build :nw-package output-path)))
 
 (defn extract-package [{:keys [nw-package] :as build} {:keys [tmp-path]}]
   (let [target-path (path-join tmp-path (io/archive-base-name nw-package))]
