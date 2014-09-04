@@ -35,7 +35,8 @@ for that).
 The following options are available to customize the build:
 
 ```clojure
-{ :name nil ; use this to override the application name
+{ :root "" ; your node-webkit app root directory
+  :name nil ; use this to override the application name
   :version nil ; use this to override the application version
   :osx {
     :icon nil ; point to an .icns icon file to be used on the generated mac osx build
