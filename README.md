@@ -41,7 +41,7 @@ The following options are available to customize the build:
   :osx {
     :icon nil ; point to an .icns icon file to be used on the generated mac osx build
   }
-  :platforms #{:osx :win :linux32 :linux64} ; select which platforms to generate the build
+  :platforms #{:osx :osx64 :win :linux32 :linux64} ; select which platforms to generate the build
   :nw-version :latest ; the node-webkit version to be used
   :output "releases" ; output directory for the generated builds
   :disable-developer-toolbar true ; this will update your package.json to remove the developer toolbar
