@@ -25,6 +25,7 @@
   (let [platform-sufix (condp = platform
                                 :win "win-ia32.zip"
                                 :osx "osx-ia32.zip"
+                                :osx64 "osx-x64.zip"
                                 :linux32 "linux-ia32.tar.gz"
                                 :linux64 "linux-x64.tar.gz")]
     (str "node-webkit-v" version "-" platform-sufix)))

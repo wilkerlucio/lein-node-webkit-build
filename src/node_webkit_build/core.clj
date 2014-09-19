@@ -10,7 +10,7 @@
             [com.github.bdesham.clj-plist :refer [parse-plist]]))
 
 (def default-options
-  {:platforms #{:osx :win :linux32 :linux64}
+  {:platforms #{:osx :osx64 :win :linux32 :linux64}
    :nw-version :latest
    :output "releases"
    :disable-developer-toolbar true
@@ -157,13 +157,23 @@
     (FileUtils/copyFile (io/file icon) (io/file resources-path "nw.icns")))
   build)
 
-(defmethod prepare-build :osx
+(defn osx-build
   [build req]
   (-> build
       (osx-copy-nw-contents req)
       (osx-inject-app-contents req)
       (osx-read-info-plist)
       (osx-icon req)))
+
+(defmethod prepare-build :osx
+  [build req]
+  (log :info "Preparing OS X 32 bit build")
+  (osx-build build req))
+
+(defmethod prepare-build :osx64
+  [build req]
+  (log :info "Preparing OS X 64 bit build")
+  (osx-build build req))
 
 ;; Windows Builder
 
