@@ -1,4 +1,4 @@
-(defproject lein-node-webkit-build "0.1.1"
+(defproject lein-node-webkit-build "0.1.2-SNAPSHOT"
   :description "Builder to pack node-webkit applicatons with leinigen"
   :url "https://github.com/wilkerlucio/lein-node-webkit-build"
   :license {:name "The MIT License"
