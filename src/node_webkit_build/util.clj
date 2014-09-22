@@ -33,3 +33,28 @@
      (let [render-bar (fn [] (clojure.string/join (repeat bar-width "-")))]
        (print (str "[" (render-bar) "] "
                    progress "/?"))))))
+
+(declare make-plist-pairs)
+
+(defn make-plist-entry-value [v]
+  (cond
+    (map? v)
+    {:tag "dict"
+     :content (make-plist-pairs v)}
+    (vector? v)
+    {:tag "array"
+     :content (mapv make-plist-entry-value v)}
+    :else
+    {:tag "string"
+     :content [v]}))
+
+(defn make-plist-pairs [m]
+  (apply concat (for [[k v] m]
+                  [{:tag "key"
+                    :content [(name k)]}
+                   (make-plist-entry-value v)])))
+
+(defn make-plist [m]
+  {:tag "plist"
+   :attrs {:version "1.0"}
+   :content (make-plist-pairs m)})
