@@ -38,23 +38,15 @@
 
 (defn make-plist-entry-value [v]
   (cond
-    (map? v)
-    {:tag "dict"
-     :content (make-plist-pairs v)}
-    (vector? v)
-    {:tag "array"
-     :content (mapv make-plist-entry-value v)}
-    :else
-    {:tag "string"
-     :content [v]}))
+    (map? v) (vec (cons :dict (make-plist-pairs v)))
+    (vector? v) (vec (cons :array (mapv make-plist-entry-value v)))
+    :else [:string v]))
 
 (defn make-plist-pairs [m]
-  (apply concat (for [[k v] m]
-                  [{:tag "key"
-                    :content [(name k)]}
-                   (make-plist-entry-value v)])))
+  (vec (apply concat (for [[k v] m]
+                   [[:key (name k)]
+                    (make-plist-entry-value v)]))))
 
 (defn make-plist [m]
-  {:tag "plist"
-   :attrs {:version "1.0"}
-   :content (make-plist-pairs m)})
+  (vec (concat [:plist {:version "1.0"}]
+           (make-plist-pairs m))))

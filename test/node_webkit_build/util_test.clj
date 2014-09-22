@@ -9,45 +9,25 @@
 
 (deftest t-make-plist-entry-value
   (is (= (make-plist-entry-value "a")
-         {:tag     "string"
-          :content ["a"]}))
+         [:string "a"]))
 
   (is (= (make-plist-entry-value ["a" "b"])
-         {:tag "array"
-          :content [{:tag "string"
-                     :content ["a"]}
-                    {:tag "string"
-                     :content ["b"]}]}))
+         [:array [:string "a"] [:string "b"]]))
 
   (is (= (make-plist-entry-value {"a" "b"})
-         {:tag "dict"
-          :content [{:tag "key"
-                     :content ["a"]}
-                    {:tag "string"
-                     :content ["b"]}]})))
+         [:dict [:key "a"] [:string "b"]])))
 
 (deftest t-make-plist-entry
   (is (= (make-plist-pairs {"a" "b"})
-         [{:tag     "key"
-           :content ["a"]}
-          {:tag     "string"
-           :content ["b"]}]))
+         [[:key "a"] [:string "b"]]))
 
   (is (= (make-plist-pairs {:a "b"})
-         [{:tag     "key"
-           :content ["a"]}
-          {:tag     "string"
-           :content ["b"]}])))
+         [[:key "a"] [:string "b"]])))
 
 (deftest t-make-plist
-  (is (= {:tag     "plist"
-          :attrs   {:version "1.0"}
-          :content []}
+  (is (= [:plist {:version "1.0"}]
          (make-plist {})))
-  (is (= {:tag     "plist"
-          :attrs   {:version "1.0"}
-          :content [{:tag     "key"
-                     :content ["LSHandlerRank"]}
-                    {:tag     "string"
-                     :content ["Owner"]}]}
+  (is (= [:plist {:version "1.0"}
+          [:key "LSHandlerRank"]
+          [:string "Owner"]]
          (make-plist {"LSHandlerRank" "Owner"}))))
