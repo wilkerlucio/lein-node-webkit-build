@@ -51,8 +51,8 @@
                     (make-plist-entry-value v)]))))
 
 (defn make-plist [m]
-  (vec (concat [:plist {:version "1.0"}]
-           (make-plist-pairs m))))
+  (conj [:plist {:version "1.0"}]
+       (make-plist-entry-value m)))
 
 (defn make-plist-xml-str [m]
   (let [doctype-prefix "\n<!DOCTYPE plist PUBLIC \"-//Apple//DTD PLIST 1.0//EN\" \"http://www.apple.com/DTDs/PropertyList-1.0.dtd\">\n<plist "]

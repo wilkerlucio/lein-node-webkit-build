@@ -144,7 +144,9 @@
          "<?xml version=\"1.0\" encoding=\"UTF-8\"?>
 <!DOCTYPE plist PUBLIC \"-//Apple//DTD PLIST 1.0//EN\" \"http://www.apple.com/DTDs/PropertyList-1.0.dtd\">
 <plist version=\"1.0\">
-  <key>CFBundleDisplayName</key>
-  <string>App Name</string>
+  <dict>
+    <key>CFBundleDisplayName</key>
+    <string>App Name</string>
+  </dict>
 </plist>
 ")))

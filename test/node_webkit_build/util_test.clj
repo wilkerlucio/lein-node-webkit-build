@@ -31,11 +31,12 @@
          [[:key "a"] [:string "b"]])))
 
 (deftest t-make-plist
-  (is (= [:plist {:version "1.0"}]
+  (is (= [:plist {:version "1.0"} [:dict]]
          (make-plist {})))
   (is (= [:plist {:version "1.0"}
-          [:key "LSHandlerRank"]
-          [:string "Owner"]]
+          [:dict
+           [:key "LSHandlerRank"]
+           [:string "Owner"]]]
          (make-plist {"LSHandlerRank" "Owner"}))))
 
 (deftest t-make-plist-xml-str
@@ -43,7 +44,9 @@
          "<?xml version=\"1.0\" encoding=\"UTF-8\"?>
 <!DOCTYPE plist PUBLIC \"-//Apple//DTD PLIST 1.0//EN\" \"http://www.apple.com/DTDs/PropertyList-1.0.dtd\">
 <plist version=\"1.0\">
-  <key>LSHandlerRank</key>
-  <string>Owner</string>
+  <dict>
+    <key>LSHandlerRank</key>
+    <string>Owner</string>
+  </dict>
 </plist>
 ")))
