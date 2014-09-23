@@ -7,6 +7,7 @@
             [node-webkit-build.versions :as versions]
             [node-webkit-build.io :refer [path-join] :as io]
             [fs.core :as fs]
+            [node-webkit-build.util :as util]
             [com.github.bdesham.clj-plist :refer [parse-plist]]))
 
 (def default-options
@@ -157,13 +158,24 @@
     (FileUtils/copyFile (io/file icon) (io/file resources-path "nw.icns")))
   build)
 
+(defn osx-set-plist-name [build req]
+  (let [app-name (get-in req [:package :name])]
+    (assoc-in build [:info "CFBundleDisplayName"] app-name)))
+
+(defn osx-export-plist [{:keys [contents-path info] :as build}]
+  (let [plist-path (path-join contents-path "Info.plist")]
+    (spit plist-path (util/make-plist-xml-str info))
+    build))
+
 (defn osx-build
   [build req]
   (-> build
       (osx-copy-nw-contents req)
       (osx-inject-app-contents req)
       (osx-read-info-plist)
-      (osx-icon req)))
+      (osx-set-plist-name req)
+      (osx-icon req)
+      (osx-export-plist)))
 
 (defmethod prepare-build :osx
   [build req]

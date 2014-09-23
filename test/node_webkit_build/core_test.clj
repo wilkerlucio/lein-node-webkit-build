@@ -127,3 +127,24 @@
               {:osx {:icon (io/path-join "test" "fixtures" "icon.icns")}})
     (is (= "icon contents\n"
            (slurp (io/path-join res-path "nw.icns"))))))
+
+(deftest test-osx-set-plist-name
+  (let [res (osx-set-plist-name {:info    {"CFBundleDisplayName" "node-webkit"
+                                           "CFBundleIconFile"    "nw.icns"
+                                           "CFBundleIdentifier"  "com.intel.nw"}}
+                                {:package {:name "App Name"}})]
+    (is (= (:info res) {"CFBundleDisplayName" "App Name"
+                        "CFBundleIconFile"    "nw.icns"
+                        "CFBundleIdentifier"  "com.intel.nw"}))))
+
+(deftest test-osx-export-plist
+  (osx-export-plist {:contents-path "tmp"
+                     :info {"CFBundleDisplayName" "App Name"}})
+  (is (= (slurp "tmp/Info.plist")
+         "<?xml version=\"1.0\" encoding=\"UTF-8\"?>
+<!DOCTYPE plist PUBLIC \"-//Apple//DTD PLIST 1.0//EN\" \"http://www.apple.com/DTDs/PropertyList-1.0.dtd\">
+<plist version=\"1.0\">
+  <key>CFBundleDisplayName</key>
+  <string>App Name</string>
+</plist>
+")))
