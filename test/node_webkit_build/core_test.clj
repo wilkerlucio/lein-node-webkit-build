@@ -129,13 +129,13 @@
            (slurp (io/path-join res-path "nw.icns"))))))
 
 (deftest test-osx-set-plist-name
-  (let [res (osx-set-plist-name {:info    {"CFBundleDisplayName" "node-webkit"
-                                           "CFBundleIconFile"    "nw.icns"
-                                           "CFBundleIdentifier"  "com.intel.nw"}}
+  (let [res (osx-set-plist-name {:info {"CFBundleName"       "node-webkit"
+                                        "CFBundleIconFile"   "nw.icns"
+                                        "CFBundleIdentifier" "com.intel.nw"}}
                                 {:package {:name "App Name"}})]
-    (is (= (:info res) {"CFBundleDisplayName" "App Name"
-                        "CFBundleIconFile"    "nw.icns"
-                        "CFBundleIdentifier"  "com.intel.nw"}))))
+    (is (= (:info res) {"CFBundleName"       "App Name"
+                        "CFBundleIconFile"   "nw.icns"
+                        "CFBundleIdentifier" "com.intel.nw"}))))
 
 (deftest test-osx-export-plist
   (osx-export-plist {:contents-path "tmp"

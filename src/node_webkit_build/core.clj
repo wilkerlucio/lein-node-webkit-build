@@ -160,7 +160,7 @@
 
 (defn osx-set-plist-name [build req]
   (let [app-name (get-in req [:package :name])]
-    (assoc-in build [:info "CFBundleDisplayName"] app-name)))
+    (assoc-in build [:info "CFBundleName"] app-name)))
 
 (defn osx-export-plist [{:keys [contents-path info] :as build}]
   (let [plist-path (path-join contents-path "Info.plist")]
