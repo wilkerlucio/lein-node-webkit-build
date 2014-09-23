@@ -11,6 +11,12 @@
   (is (= (make-plist-entry-value "a")
          [:string "a"]))
 
+  (is (= (make-plist-entry-value true)
+         [:true]))
+
+  (is (= (make-plist-entry-value false)
+         [:false]))
+
   (is (= (make-plist-entry-value ["a" "b"])
          [:array [:string "a"] [:string "b"]]))
 

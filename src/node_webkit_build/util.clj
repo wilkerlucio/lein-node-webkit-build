@@ -41,6 +41,8 @@
   (cond
     (map? v) (vec (cons :dict (make-plist-pairs v)))
     (vector? v) (vec (cons :array (mapv make-plist-entry-value v)))
+    (true? v) [:true]
+    (false? v) [:false]
     :else [:string v]))
 
 (defn make-plist-pairs [m]
