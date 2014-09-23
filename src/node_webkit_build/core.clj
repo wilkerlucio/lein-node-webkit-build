@@ -164,6 +164,7 @@
 
 (defn osx-export-plist [{:keys [contents-path info] :as build}]
   (let [plist-path (path-join contents-path "Info.plist")]
+    (log :info "Saving Info.plist file at" plist-path)
     (spit plist-path (util/make-plist-xml-str info))
     build))
 
