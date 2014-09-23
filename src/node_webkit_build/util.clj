@@ -1,4 +1,5 @@
-(ns node-webkit-build.util)
+(ns node-webkit-build.util
+  (:require [clojure.data.xml :as xml]))
 
 (defn map-values [f m]
   (into {} (map (fn [[k v]] [k (f v)]) m)))
@@ -50,3 +51,11 @@
 (defn make-plist [m]
   (vec (concat [:plist {:version "1.0"}]
            (make-plist-pairs m))))
+
+(defn make-plist-xml-str [m]
+  (let [doctype-prefix "\n<!DOCTYPE plist PUBLIC \"-//Apple//DTD PLIST 1.0//EN\" \"http://www.apple.com/DTDs/PropertyList-1.0.dtd\">\n<plist "]
+    (-> (make-plist m)
+        (xml/sexp-as-element)
+        (xml/indent-str)
+        ;; dirty hack to inject DOCTYPE, could not find another way to make clojure.data.xml print it out
+        (clojure.string/replace #"<plist " doctype-prefix))))
