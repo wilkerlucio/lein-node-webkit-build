@@ -133,8 +133,8 @@
     (io/copy-ensuring-blank app-path output-path)
     (assoc build :build-path output-path)))
 
-(defn osx-inject-app-contents [{:keys [build-path] :as build} {:keys [build-path]}]
-  (let [contents-path (path-join build-path "Contents")
+(defn osx-inject-app-contents [{release-path :build-path :as build} {:keys [build-path]}]
+  (let [contents-path (path-join release-path "Contents")
         resources-path (path-join contents-path "Resources")
         patch-path (path-join resources-path "app.nw")]
     (log :info (str "Copying app contents into " patch-path))
