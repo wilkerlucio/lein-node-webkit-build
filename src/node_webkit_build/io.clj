@@ -21,6 +21,8 @@
 (def exists? #'fs/exists?)
 (def mkdirs #'fs/mkdirs)
 
+(defn dir-name [path] (.getParent (File. (str path))))
+
 (defn path-join [& parts] (clojure.string/join (File/separator) parts))
 
 (defn path-files [path]
@@ -72,6 +74,12 @@
     (with-sh-dir source-path
       (apply sh "zip" "-r" target-path (fs/list-dir source-path))))
   target-path)
+
+(defn zip-dir [source-path target-path]
+  (let [source-path (fs/absolute-path source-path)
+        target-path (fs/absolute-path target-path)]
+    (with-sh-dir (dir-name source-path)
+      (sh "zip" "-r" target-path (base-name source-path)))))
 
 (defn unzip [zip-path target-path]
   (sh "unzip" "-q" zip-path "-d" target-path))

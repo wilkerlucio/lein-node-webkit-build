@@ -107,15 +107,15 @@
       (io/zip build-path package-path))
     (assoc build :app-pack package-path)))
 
-(defn copy-nw-contents [{:keys [platform expanded-nw-package] :as build} {:keys [output] :as req}]
-  (let [output (io/file output (name platform) (get-in req [:package :name]))]
+(defn copy-nw-contents [{:keys [platform expanded-nw-package] :as build} {:keys [tmp-path] :as req}]
+  (let [output (io/file tmp-path "current" (name platform) (get-in req [:package :name]))]
     (log :info "Copying" expanded-nw-package "into" output)
     (io/mkdirs output)
     (FileUtils/copyDirectory (io/file expanded-nw-package) output)
-    (assoc build :release-path output)))
+    (assoc build :build-path output)))
 
-(defn merge-app-contents [{:keys [release-path app-pack] :as build} executable]
-  (let [pack-target (io/file release-path executable)]
+(defn merge-app-contents [{:keys [build-path app-pack] :as build} executable]
+  (let [pack-target (io/file build-path executable)]
     (log :info "Merging app contents into executable" pack-target)
     (with-open [in (io/input-stream app-pack)
                 out (FileOutputStream. pack-target true)]
@@ -126,15 +126,15 @@
 
 ;; OSX Builder
 
-(defn osx-copy-nw-contents [{:keys [expanded-nw-package platform] :as build} {:keys [output] :as req}]
+(defn osx-copy-nw-contents [{:keys [expanded-nw-package platform] :as build} {:keys [tmp-path] :as req}]
   (let [app-path (path-join expanded-nw-package "node-webkit.app")
-        output-path (path-join output (name platform) (str (get-in req [:package :name]) ".app"))]
+        output-path (path-join tmp-path "current" (name platform) (str (get-in req [:package :name]) ".app"))]
     (log :info (str "Copying " app-path " into " output-path))
     (io/copy-ensuring-blank app-path output-path)
-    (assoc build :release-path output-path)))
+    (assoc build :build-path output-path)))
 
-(defn osx-inject-app-contents [{:keys [release-path] :as build} {:keys [build-path]}]
-  (let [contents-path (path-join release-path "Contents")
+(defn osx-inject-app-contents [{:keys [build-path] :as build} {:keys [build-path]}]
+  (let [contents-path (path-join build-path "Contents")
         resources-path (path-join contents-path "Resources")
         patch-path (path-join resources-path "app.nw")]
     (log :info (str "Copying app contents into " patch-path))
@@ -167,6 +167,17 @@
     (log :info "Saving Info.plist file at" plist-path)
     (spit plist-path (util/make-plist-xml-str info))
     build))
+
+(defn compress-output [{:keys [build-path platform] :as build} {:keys [output] :as req}]
+  (let [app-name (get-in req [:package :name])
+        version (get-in req [:package :version])
+        compressed-path (path-join output
+                                   (str app-name "-v" version)
+                                   (str app-name "-" (name platform) "-v" version ".zip"))]
+    (log :info "Compressing" build-path "to" compressed-path)
+    (io/mkdirs (io/dir-name compressed-path))
+    (io/zip-dir build-path compressed-path)
+    (assoc build :compressed-path compressed-path)))
 
 (defn osx-build
   [build req]
@@ -221,7 +232,8 @@
   (let [build (-> {:platform platform}
                   (ensure-platform req)
                   (extract-package req)
-                  (prepare-build req))]
+                  (prepare-build req)
+                  (compress-output req))]
     (assoc-in req [:builds platform] build)))
 
 (defn build-platforms [{:keys [platforms] :as req}]

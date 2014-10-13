@@ -150,3 +150,16 @@
   </dict>
 </plist>
 ")))
+
+(deftest test-compress-output
+  (let [calls (atom [])]
+    (with-redefs [io/zip-dir (fn [& args] (swap! calls conj args))]
+      (is (= (compress-output {:build-path "some/path/of/release"
+                               :platform :osx}
+                              {:package {:name "App Name"
+                                         :version "1.2.3"}
+                               :output "releases"})
+             {:build-path      "some/path/of/release"
+              :compressed-path "releases/App Name-v1.2.3/App Name-osx-v1.2.3.zip"
+              :platform        :osx}))
+      (is (= @calls [["some/path/of/release" "releases/App Name-v1.2.3/App Name-osx-v1.2.3.zip"]])))))
