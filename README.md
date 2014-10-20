@@ -9,7 +9,7 @@ This project was inspired on the great [grunt-node-webkit-build](https://github.
 You can install this plugin by adding it on your plugins list on your `project.clj`.
 
 ```clojure
-:plugins [["lein-node-webkit-build", "0.1.5"]]
+:plugins [["lein-node-webkit-build", "0.1.6"]]
 ```
 
 ## Usage
@@ -50,6 +50,17 @@ The following options are available to customize the build:
 ```
 
 This project still very young and all feedback will be great to improve it.
+
+## Build information
+
+After the build process ends, a file is saved at `TMP-PATH/build-info.edn`, if you need
+to get any information generated from the build, you can read this file as:
+
+```clojure
+(read-string (slurp "tmp/nw-build/build-info.edn"))
+```
+
+It contains all sorts of information that is generated during the build.
 
 ## License
 
