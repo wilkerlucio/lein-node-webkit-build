@@ -1,5 +1,5 @@
 (ns node-webkit-build.core
-  (:import (java.io FileOutputStream FileInputStream)
+  (:import (java.io FileOutputStream FileInputStream File)
            (org.apache.commons.io FileUtils IOUtils FilenameUtils))
   (:require [clojure.data.json :as json]
             [slingshot.slingshot :refer [throw+]]
@@ -112,7 +112,7 @@
     (log :info "Copying" expanded-nw-package "into" output)
     (io/mkdirs output)
     (FileUtils/copyDirectory (io/file expanded-nw-package) output)
-    (assoc build :build-path output)))
+    (assoc build :build-path (.toString output))))
 
 (defn merge-app-contents [{:keys [build-path app-pack] :as build} executable]
   (let [pack-target (io/file build-path executable)]
@@ -239,6 +239,12 @@
 (defn build-platforms [{:keys [platforms] :as req}]
   (reduce build-platform req platforms))
 
+(defn save-result [{:keys [tmp-path] :as req}]
+  (let [res-path (path-join tmp-path "build-info.edn")]
+    (log :info "Writing build info at" res-path)
+    (spit (File. res-path) (pr-str req))
+    req))
+
 (defn build-app [options]
   (-> (merge default-options options)
       read-versions
@@ -251,4 +257,5 @@
       disable-developer-toolbar
       prepare-package-json
       output-files
-      build-platforms))
+      build-platforms
+      save-result))
