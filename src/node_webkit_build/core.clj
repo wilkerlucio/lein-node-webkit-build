@@ -1,6 +1,6 @@
 (ns node-webkit-build.core
   (:import (java.io FileOutputStream FileInputStream File)
-           (org.apache.commons.io FileUtils IOUtils FilenameUtils))
+           (org.apache.commons.io FileUtils IOUtils))
   (:require [clojure.data.json :as json]
             [slingshot.slingshot :refer [throw+]]
             [taoensso.timbre :refer [log]]
