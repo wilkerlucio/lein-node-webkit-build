@@ -9,7 +9,7 @@ This project was inspired on the great [grunt-node-webkit-build](https://github.
 You can install this plugin by adding it on your plugins list on your `project.clj`.
 
 ```clojure
-:plugins [["lein-node-webkit-build", "0.1.6"]]
+:plugins [[lein-node-webkit-build "0.1.6"]]
 ```
 
 ## Usage
