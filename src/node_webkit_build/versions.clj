@@ -1,7 +1,4 @@
 (ns node-webkit-build.versions
-  (:import (org.apache.commons.io.input CountingInputStream)
-           (java.io File FileOutputStream FileInputStream)
-           (org.apache.commons.io FileUtils IOUtils))
   (:require [clj-http.client :as http]
             [clj-semver.core :as semver]
             [node-webkit-build.util :refer [map-values]]))
@@ -20,16 +17,23 @@
        (set)
        (sort semver/cmp)))
 
+(def platform-sufixes
+  {:win "win-ia32.zip"
+   :osx "osx-ia32.zip"
+   :osx64 "osx-x64.zip"
+   :linux32 "linux-ia32.tar.gz"
+   :linux64 "linux-x64.tar.gz"})
+
+(defn build-prefix [version]
+  (if (semver/older? version "0.12.0")
+    "node-webkit-v"
+    "nwjs-v"))
+
 (defn filename-for [platform version]
   "Returns the file name for a given platform and version."
-  (let [platform-sufix (condp = platform
-                                :win "win-ia32.zip"
-                                :osx "osx-ia32.zip"
-                                :osx64 "osx-x64.zip"
-                                :linux32 "linux-ia32.tar.gz"
-                                :linux64 "linux-x64.tar.gz")]
-    (str "node-webkit-v" version "-" platform-sufix)))
+  (str (build-prefix version) version "-" (get platform-sufixes platform)))
 
 (defn url-for [platform version]
   "Returns the url to download node webkit for a given platform and version."
   (str server-url "v" version "/" (filename-for platform version)))
+

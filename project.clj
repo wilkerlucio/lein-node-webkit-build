@@ -17,5 +17,5 @@
                  [bdesham/clj-plist "0.9.1"]
                  [org.clojure/data.xml "0.0.8"]]
 
-  :profiles {:dev {:dependencies [[com.gfredericks/vcr-clj "0.4.0"]]}}
+  :profiles {:dev {:dependencies [[com.gfredericks/vcr-clj "0.4.1"]]}}
   :deploy-repositories [["releases" :clojars]])
