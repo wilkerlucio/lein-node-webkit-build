@@ -12,7 +12,7 @@
    It uses clj-semver to sort the version numbers."
   (->> (http/get server-url)
        :body
-       (re-seq #"v(\d+\.\d+\.\d+)")
+       (re-seq #"v(\d+\.\d+\.\d+)/")
        (map second)
        (set)
        (sort semver/cmp)))
