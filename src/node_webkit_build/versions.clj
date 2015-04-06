@@ -24,6 +24,11 @@
    :linux32 "linux-ia32.tar.gz"
    :linux64 "linux-x64.tar.gz"})
 
+(defn nw-appname [version]
+  (if (semver/older? version "0.12.0")
+    "node-webkit"
+    "nwjs"))
+
 (defn build-prefix [version]
   (if (semver/older? version "0.12.0")
     "node-webkit-v"

@@ -41,3 +41,9 @@
            (url-for :linux64 "0.9.1")))
     (is (= "http://dl.node-webkit.org/v0.12.0/nwjs-v0.12.0-osx-x64.zip"
            (url-for :osx64 "0.12.0")))))
+
+(deftest test-for-app-name-by-version
+  (testing "The executable names changed when semantic version switched up to 0.12.0"
+    (is (= "node-webkit" (nw-appname "0.8.0")))
+    (is (= "node-webkit" (nw-appname "0.11.6")))
+    (is (= "nwjs" (nw-appname "0.12.0")))))
