@@ -127,8 +127,8 @@
 ;; OSX Builder
 
 (defn osx-copy-nw-contents [{:keys [expanded-nw-package platform] :as build} {:keys [tmp-path] :as req}]
-  (let [nw-appname (versions/nw-appname (:nw-version req))
-        app-path (path-join expanded-nw-package (str nw-appname ".app"))
+  (let [nw-appname (str (versions/nw-appname (:nw-version req)) ".app")
+        app-path (path-join expanded-nw-package nw-appname)
         output-path (path-join tmp-path "current" (name platform) (str (get-in req [:package :name]) ".app"))]
     (log :info (str "Copying " app-path " into " output-path))
     (io/copy-ensuring-blank app-path output-path)

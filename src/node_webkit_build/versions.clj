@@ -30,9 +30,7 @@
     "nwjs"))
 
 (defn build-prefix [version]
-  (if (semver/older? version "0.12.0")
-    "node-webkit-v"
-    "nwjs-v"))
+  (str (nw-appname version) "-v"))
 
 (defn filename-for [platform version]
   "Returns the file name for a given platform and version."
