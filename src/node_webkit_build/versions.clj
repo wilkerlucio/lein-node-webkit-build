@@ -3,7 +3,7 @@
             [clj-semver.core :as semver]
             [node-webkit-build.util :refer [map-values]]))
 
-(def server-url "http://dl.node-webkit.org/")
+(def server-url "http://dl.nwjs.io/")
 
 (defn versions-list []
   "Reads an HTTP URL formated as Apache Index looking for semantic version
