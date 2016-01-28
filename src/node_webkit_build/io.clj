@@ -3,8 +3,8 @@
            (org.apache.commons.io.input CountingInputStream)
            (org.apache.commons.io FilenameUtils FileUtils))
   (:require [clj-http.client :as http]
-            [fs.core :as fs]
-            [fs.compression :as compression]
+            [me.raynes.fs :as fs]
+            [me.raynes.fs.compression :as compression]
             [clojure.java.io :as io]
             [clojure.java.shell :refer [sh with-sh-dir]]
             [node-webkit-build.util :refer [insert-after print-progress-bar]]))
