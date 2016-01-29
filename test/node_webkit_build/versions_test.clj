@@ -31,15 +31,15 @@
 
 (deftest test-url-for
   (testing "Generating URL for a given platform and version"
-    (is (= "http://dl.node-webkit.org/v0.9.1/node-webkit-v0.9.1-win-ia32.zip"
+    (is (= "http://dl.nwjs.io/v0.9.1/node-webkit-v0.9.1-win-ia32.zip"
            (url-for :win "0.9.1")))
-    (is (= "http://dl.node-webkit.org/v0.9.1/node-webkit-v0.9.1-osx-ia32.zip"
+    (is (= "http://dl.nwjs.io/v0.9.1/node-webkit-v0.9.1-osx-ia32.zip"
            (url-for :osx "0.9.1")))
-    (is (= "http://dl.node-webkit.org/v0.9.1/node-webkit-v0.9.1-linux-ia32.tar.gz"
+    (is (= "http://dl.nwjs.io/v0.9.1/node-webkit-v0.9.1-linux-ia32.tar.gz"
            (url-for :linux32 "0.9.1")))
-    (is (= "http://dl.node-webkit.org/v0.9.1/node-webkit-v0.9.1-linux-x64.tar.gz"
+    (is (= "http://dl.nwjs.io/v0.9.1/node-webkit-v0.9.1-linux-x64.tar.gz"
            (url-for :linux64 "0.9.1")))
-    (is (= "http://dl.node-webkit.org/v0.12.0/nwjs-v0.12.0-osx-x64.zip"
+    (is (= "http://dl.nwjs.io/v0.12.0/nwjs-v0.12.0-osx-x64.zip"
            (url-for :osx64 "0.12.0")))))
 
 (deftest test-for-app-name-by-version
