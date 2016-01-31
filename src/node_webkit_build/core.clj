@@ -6,7 +6,7 @@
             [taoensso.timbre :refer [log]]
             [node-webkit-build.versions :as versions]
             [node-webkit-build.io :refer [path-join] :as io]
-            [fs.core :as fs]
+            [me.raynes.fs :as fs]
             [node-webkit-build.util :as util]
             [com.github.bdesham.clj-plist :refer [parse-plist]]))
 
