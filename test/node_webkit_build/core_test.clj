@@ -142,6 +142,7 @@
                         "CFBundleIdentifier" "com.intel.nw"}))))
 
 (deftest test-osx-export-plist
+  (io/mkdirs "tmp")
   (osx-export-plist {:contents-path "tmp"
                      :info {"CFBundleDisplayName" "App Name"}})
   (is (= (slurp "tmp/Info.plist")
